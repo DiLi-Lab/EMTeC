@@ -1,0 +1,44 @@
+### TODO maybe not needed (results_base_path)
+results_base_path: './data/{dec_folder}/results'
+eyetracking_event_path: './data/{dec_folder}/'
+
+edf2asc: {
+    write_logs: True,
+    skip_existing: True,
+    n_jobs: 5,
+    filename_mapping : {
+    }
+}
+
+exclude: {
+             subjects: ['ET_19', 'ET_36', 'ET_40', 'ET_40_1', 'ET_43', 'ET_45', 'ET_60', 'ET_79'],   # exclude entire subjects
+             screens: {
+                          ET_13: [35,],
+                          ET_18: [24,],    # from specified subjects, exclude screens
+                          ET_22: [3,],
+                          ET_31: [42,],
+             }
+}
+
+asc2csv: {
+    experiments: ['reading'],
+    columns: {
+        # for mono eye tracked data, and which eye doesn't matter
+        sample: [ 'time', 'x_right', 'y_right', 'pupil_right'],
+        reading: ['item_id', 'TRIAL_ID', 'Trial_Index_', 'model', 'decoding_strategy'],
+    },
+    n_jobs: 10,
+    check_file_exists: True
+}
+
+csv2events: {
+    experiments: ['reading'],
+    columns: {
+        sample_velocity: [ 'event', 'seq_dx_deg', 'seq_dy_deg', 'item_id', 'TRIAL_ID', 'Trial_Index_', 'subject_id', 'model', 'decoding_strategy'],
+        sample_deg: [ 'event', 'seq_x_deg', 'seq_y_deg', 'item_id', 'TRIAL_ID', 'Trial_Index_', 'subject_id', 'model', 'decoding_strategy'],
+        sample_px: [ 'event', 'seq_x', 'seq_y', 'seq_t', 'item_id', 'TRIAL_ID', 'Trial_Index_', 'subject_id', 'model', 'decoding_strategy'],
+        reading: [ 'item_id', 'TRIAL_ID', 'Trial_Index_', 'model', 'decoding_strategy'],
+    },
+    n_jobs: 10,
+    check_file_exists: True
+}
