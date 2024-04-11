@@ -62,7 +62,7 @@ bash run_stimuli_selection.sh
 
 In order to reproduce the pre-processing of the eye-tracking data, place the subject directories into the `data` directory, 
 the result of which should look like the following:
-
+```
 ├── data
     ├── ET_01
     │   ├── aoi
@@ -75,6 +75,7 @@ the result of which should look like the following:
     │   ├── RESULTS_QUESTIONNAIRE.txt
     │   ├── RESULTS_QUESTIONS.txt
     └── ...
+```
 
 ### Conversion of `.edf` files to `.asc` files
 
