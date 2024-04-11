@@ -78,9 +78,9 @@ def main():
     path_to_mistral = 'generation/output_generation/mistral'
     path_to_wizardlm = 'generation/output_generation/wizardlm'
 
-    list_attribution = pd.read_csv('stimuli_selection/util_files/list_attributions_0-105.csv')
-    selected_items = np.load('stimuli_selection/util_files/selected_items_0-105.npy')
-    prompts_introductory_screens_items = pd.read_csv('stimuli_selection/util_files/prompts_and_introductory_screens_items_0-105.csv')
+    list_attribution = pd.read_csv('stimuli_selection/util_files/list_attribution.csv')
+    selected_items = np.load('stimuli_selection/util_files/selected_items.npy')
+    prompts_introductory_screens_items = pd.read_csv('stimuli_selection/util_files/prompts_and_introductory_screens.csv')
 
     all_columns = ['item_id', 'list', 'filename', 'model', 'decoding_strategy', 'introductory_screen_item',
                    'generation_config', 'prompt', 'prompt_toks', 'prompt_input_ids',
@@ -130,7 +130,7 @@ def main():
 
 
     # add the comprehension questions to the data frame
-    questions_df = pd.read_csv('stimuli_selection/util_files/stimuli_and_questions_balanced_0-105.csv')
+    questions_df = pd.read_csv('stimuli_selection/util_files/stimuli_and_questions_balanced.csv')
     stimuli_and_questions_df = add_questions(
         stimuli_df=stimuli_df,
         questions_df=questions_df,
