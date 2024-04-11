@@ -57,3 +57,33 @@ are added for each generated text, which can separately be found in `stimuli_sel
 bash run_stimuli_selection.sh
 ```
 
+
+## Pre-Processing of Eye-Tracking Data
+
+In order to reproduce the pre-processing of the eye-tracking data, place the subject directories into the `data` directory, 
+the result of which should look like the following:
+
+├── data
+    ├── ET_01
+    │   ├── aoi
+    │   ├── ET_01.edf
+    │   ├── RESULTS_QUESTIONNAIRE.txt
+    │   ├── RESULTS_QUESTIONS.txt
+    ├── ET_02
+    │   ├── aoi
+    │   ├── ET_02.edf
+    │   ├── RESULTS_QUESTIONNAIRE.txt
+    │   ├── RESULTS_QUESTIONS.txt
+    └── ...
+
+### Conversion of `.edf` files to `.asc` files
+
+The `.edf` files returned by the experimental software is not published. We nevertheless publish the code that implements 
+this conversion. The result is an `.asc` file in each subject directory.
+
+
+```bash
+bash run_edf2asc.sh
+```
+
+
