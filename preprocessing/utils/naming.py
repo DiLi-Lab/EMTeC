@@ -152,7 +152,7 @@ def create_filepath_for_event_file(
         model: str,
         decoding_strategy: str,
 ):
-    filename = f'{subj_id}_trialid{TRIAL_ID}_{item_id}_trialindex{Trial_Index_}_{model}_{decoding_strategy}_fixations.csv'
+    filename = f'{subj_id}-{item_id}-fixations.csv'
     filepath = os.path.join(event_dir, 'event_files')
     if not os.path.exists(filepath):
         os.makedirs(filepath)

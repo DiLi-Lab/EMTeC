@@ -29,7 +29,7 @@ def plot_px_over_time(
     Function to plot the raw x- and y- coordinates over time and insert the fixations extracted by the algorith into
     the plot.
     """
-    plot_filename = f'{subj_id}_trialid{TRIAL_ID}_{item_id}_trialindex{Trial_Index_}_{model}_{decoding_strategy}_px_time.png'
+    plot_filename = f'{subj_id}-{item_id}-px_time.png'
     plot_savepath = os.path.join(event_dir, 'plots', 'px_time')
     if not os.path.exists(plot_savepath):
         os.makedirs(plot_savepath)
@@ -99,8 +99,8 @@ def plot_ampl_over_vel(
         model: str,
         decoding_strategy: str,
 ):
-    plot_filename = f'{subj_id}_trialid{TRIAL_ID}_{item_id}_trialindex{Trial_Index_}_{model}_{decoding_strategy}_ampl_vel_regline.png'
-    plot_savepath = os.path.join(event_dir, 'plots', 'ampl_vel_processed')
+    plot_filename = f'{subj_id}-{item_id}-ampl_vel_reg.png'
+    plot_savepath = os.path.join(event_dir, 'plots', 'ampl_vel')
     if not os.path.exists(plot_savepath):
         os.makedirs(plot_savepath)
     # peak_velocities, amplitudes = compute_peak_velocity_and_amplitude(event_dat=event_dat, sampling=sampling)
@@ -127,7 +127,7 @@ def plot_ampl_over_vel(
     plt.close()
 
     # plot once without the regression line
-    plot_filename = f'{subj_id}_trialid{TRIAL_ID}_{item_id}_trialindex{Trial_Index_}_{model}_{decoding_strategy}_ampl_vel.png'
+    plot_filename = f'{subj_id}-{item_id}-ampl_vel.png'
     # plot peak velocity over amplitude
     plt.plot(amplitudes, peak_velocities, 'o', color='steelblue', markersize=3, label='Data points')
     plt.xlabel('amplitude deg')

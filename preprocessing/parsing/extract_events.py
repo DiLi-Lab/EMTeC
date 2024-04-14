@@ -57,7 +57,7 @@ def get_parser() -> ArgumentParser:
         '--threshold-factor',
         type=float,
         default=3,
-        help='the factor with which the threshold (standard deviation of the velocity distribution) is multiplied'
+        help='the factor with which the threshold (standard deviation of the velocity distribution) is multiplied to obtain the radius.'
     )
     parser.add_argument(
         '--threshold-method',
@@ -81,13 +81,13 @@ def get_parser() -> ArgumentParser:
         '--max-saccade-velocity',
         type=int,
         default=500,
-        help='the maximum saccade velocity in degrees/ms.',
+        help='the maximum saccade velocity in degrees/s.',
     )
     parser.add_argument(
         '--theta',
         type=float,
         default=0.6,
-        help='velocity threshold in degrees/ms',
+        help='velocity threshold in degrees/s',
     )
     return parser
 
@@ -592,17 +592,18 @@ def readfile_event(#file_name,
 
 
         # plot the processed saccades
-        plot_ampl_over_vel(
-            event_dat=saccade_df,
-            sampling=sampling,
-            subj_id=subj_id,
-            event_dir=event_dir,
-            TRIAL_ID=TRIAL_ID,
-            item_id=item_id,
-            Trial_Index_=Trial_Index_,
-            model=model,
-            decoding_strategy=decoding_strategy,
-        )
+        if plot_ampl_velocity:
+            plot_ampl_over_vel(
+                event_dat=saccade_df,
+                sampling=sampling,
+                subj_id=subj_id,
+                event_dir=event_dir,
+                TRIAL_ID=TRIAL_ID,
+                item_id=item_id,
+                Trial_Index_=Trial_Index_,
+                model=model,
+                decoding_strategy=decoding_strategy,
+            )
 
 
         if unit == 'velocity':
