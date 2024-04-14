@@ -64,23 +64,25 @@ In order to reproduce the pre-processing of the eye-tracking data, place the sub
 the result of which should look like the following:
 ```
 ├── data
-    ├── ET_01
-    │   ├── aoi
-    │   ├── ET_01.edf
-    │   ├── RESULTS_QUESTIONNAIRE.txt
-    │   ├── RESULTS_QUESTIONS.txt
-    ├── ET_02
-    │   ├── aoi
-    │   ├── ET_02.edf
-    │   ├── RESULTS_QUESTIONNAIRE.txt
-    │   ├── RESULTS_QUESTIONS.txt
-    └── ...
+    ├── subject_level_data
+    │   ├── ET_01
+    │   │   ├── aoi
+    │   │   ├── ET_01.edf
+    │   │   ├── RESULTS_QUESTIONNAIRE.txt
+    │   │   ├── RESULTS_QUESTIONS.txt
+    │   ├── ET_02
+    │   │   ├── aoi
+    │   │   ├── ET_02.edf
+    │   │   ├── RESULTS_QUESTIONNAIRE.txt
+    │   │   ├── RESULTS_QUESTIONS.txt
+    │   └── ...
 ```
 
 ### Conversion of `.edf` files to `.asc` files
 
 The `.edf` files returned by the experimental software is not published. We nevertheless publish the code that implements 
-this conversion. The result is an `.asc` file in each subject directory.
+this conversion. The result is an `.asc` file in each subject directory. Beware that the application that converts the `.edf` 
+to `.asc` files only works in Linux- or Windows-based systems.
 
 
 ```bash
@@ -89,13 +91,14 @@ bash run_edf2asc.sh
 
 ```
 ├── data
-    ├── ET_01
-    │   ├── aoi
-    │   ├── ET_01.edf
-    │   ├── ET_01.asc
-    │   ├── RESULTS_QUESTIONNAIRE.txt
-    │   ├── RESULTS_QUESTIONS.txt
-    └── ...
+    ├── subject_level_data
+    │   ├── ET_01
+    │   │   ├── aoi
+    │   │   ├── ET_01.asc
+    │   │   ├── ET_01.edf
+    │   │   ├── RESULTS_QUESTIONNAIRE.txt
+    │   │   ├── RESULTS_QUESTIONS.txt
+    │   └── ...
 ```
 
 ### Conversion of `.asc` to `.csv` files
@@ -107,16 +110,18 @@ simply run
 bash run_asc2csv.sh
 ```
 The resulting data directory structure will then look like this:
+
 ```
 ├── data
-    ├── ET_01
-    │   ├── aoi
-    │   ├── ET_01.asc
-    │   ├── ET_01.csv
-    │   ├── ET_01.edf
-    │   ├── RESULTS_QUESTIONNAIRE.txt
-    │   ├── RESULTS_QUESTIONS.txt
-    └── ...
+    ├── subject_level_data
+    │   ├── ET_01
+    │   │   ├── aoi
+    │   │   ├── ET_01.asc
+    │   │   ├── ET_01.csv
+    │   │   ├── ET_01.edf
+    │   │   ├── RESULTS_QUESTIONNAIRE.txt
+    │   │   ├── RESULTS_QUESTIONS.txt
+    │   └── ...
 ```
 
 
@@ -147,36 +152,89 @@ saccade velocity over amplitude is plotted):
 
 ```
 ├── data
-    ├── ET_01
-    │   ├── aoi
-    │   ├── fixations
-    │   │   ├── event_files
-    │   │   │   ├── ET_01-item01-fixations.csv
-    │   │   │   ├── ET_01-item02-fixations.csv
-    │   │   │   └── ...
-    │   │   ├── plots
-    │   │   │   ├── ampl_vel
-    │   │   │   │   ├── ET_01-item01-ampl_vel.png
-    │   │   │   │   ├── ET_01-item01-ampl_vel_reg.png
-    │   │   │   │   ├── ET_01-item02-ampl_vel.png
-    │   │   │   │   ├── ET_01-item02-ampl_vel_reg.png
+    ├── subject_level_data
+    │   ├── ET_01
+    │   │   ├── aoi
+    │   │   ├── fixations
+    │   │   │   ├── event_files
+    │   │   │   │   ├── ET_01-item01-fixations.csv
+    │   │   │   │   ├── ET_01-item02-fixations.csv
     │   │   │   │   └── ...
-    │   │   │   ├── px_time
-    │   │   │   │   ├── ET_01-item01-px_time.png
-    │   │   │   │   ├── ET_01-item02-px_time.png
-    │   │   │   │   └── ...
-    │   │   ├── command_log.txt
-    │   ├── ET_01.asc
-    │   ├── ET_01.csv
-    │   ├── ET_01.edf
-    │   ├── RESULTS_QUESTIONNAIRE.txt
-    │   ├── RESULTS_QUESTIONS.txt
-    └── ...
+    │   │   │   ├── plots
+    │   │   │   │   ├── ampl_vel
+    │   │   │   │   │   ├── ET_01-item01-ampl_vel.png
+    │   │   │   │   │   ├── ET_01-item01-ampl_vel_reg.png
+    │   │   │   │   │   ├── ET_01-item02-ampl_vel.png
+    │   │   │   │   │   ├── ET_01-item02-ampl_vel_reg.png
+    │   │   │   │   │   └── ...
+    │   │   │   │   ├── px_time
+    │   │   │   │   │   ├── ET_01-item01-px_time.png
+    │   │   │   │   │   ├── ET_01-item02-px_time.png
+    │   │   │   │   │   └── ...
+    │   │   │   ├── command_log.txt
+    │   │   ├── ET_01.asc
+    │   │   ├── ET_01.csv
+    │   │   ├── ET_01.edf
+    │   │   ├── RESULTS_QUESTIONNAIRE.txt
+    │   │   ├── RESULTS_QUESTIONS.txt
+    │   └── ...
 ```
 
 The `event_files` directory contains the extracted fixations, one file per screen/experimental stimulus. The directory 
 `ampl_vel` contains the plots of saccade amplitude over velocity, and `px_time` contains the coordinates over time plots. 
 `command_log.txt` contains the programm call given in the bash script `run_csv2events.sh`.
+
+
+### Fixation correction
+
+In order to manually correct the extracted fixations, primarily fixing vertical drifts during eye-tracking, please first 
+create a new virtual environment and install the necessary requirements:
+
+```bash
+pip install -r preprocessing/fixation_correction/fixcorr_requirements.txt
+```
+Then run the fixation correction script:
+```bash
+bash run_fixcorr.sh
+```
+The argument `--run-on-subj` indicates on which subject to run the fixation correction. If this argument is not given, the script 
+will iterate through all files of all subjects. The resulting directory structure looks like this:
+
+```
+├── data
+    ├── subject_level_data
+    │   ├── ET_01
+    │   │   ├── aoi
+    │   │   ├── fixations
+    │   │   │   ├── event_files
+    │   │   │   │   ├── ET_01-item01-fixations.csv
+    │   │   │   │   ├── ET_01-item02-fixations.csv
+    │   │   │   │   └── ...
+    │   │   │   ├── plots
+    │   │   │   │   ├── ampl_vel
+    │   │   │   │   │   ├── ET_01-item01-ampl_vel.png
+    │   │   │   │   │   ├── ET_01-item01-ampl_vel_reg.png
+    │   │   │   │   │   ├── ET_01-item02-ampl_vel.png
+    │   │   │   │   │   ├── ET_01-item02-ampl_vel_reg.png
+    │   │   │   │   │   └── ...
+    │   │   │   │   ├── px_time
+    │   │   │   │   │   ├── ET_01-item01-px_time.png
+    │   │   │   │   │   ├── ET_01-item02-px_time.png
+    │   │   │   │   │   └── ...
+    │   │   │   ├── command_log.txt
+    │   │   ├── fixations_corrected
+    │   │   │   ├── event_files
+    │   │   │   │   ├── ET_01-item01-fixations_corrected.csv
+    │   │   │   │   ├── ET_01-item02-fixations_corrected.csv
+    │   │   │   │   └── ...
+    │   │   ├── ET_01.asc
+    │   │   ├── ET_01.csv
+    │   │   ├── ET_01.edf
+    │   │   ├── RESULTS_QUESTIONNAIRE.txt
+    │   │   ├── RESULTS_QUESTIONS.txt
+    │   └── ...
+```
+
 
 
 ### Computation of reading measures
@@ -186,38 +244,104 @@ To compute word-based reading measures from the fixation sequences, run
 ```bash
 bash run_events2rms.sh
 ```
-The reading measures are saved in one file per screen/experimental stimulus, and the resulting folder structure looks like 
-the following:
+The reading measures are saved in one file per screen/experimental stimulus, and the resulting folder structure is 
+indicated below. The keyword `--corrected` in the bash script indicates that computation of reading measures should only be 
+done on corrected fixations. If it is omitted, reading measures are computed on the uncorrected fixations.
+```
+├── data
+    ├── subject_level_data
+    │   ├── ET_01
+    │   │   ├── aoi
+    │   │   ├── fixations
+    │   │   │   ├── event_files
+    │   │   │   │   ├── ET_01-item01-fixations.csv
+    │   │   │   │   ├── ET_01-item02-fixations.csv
+    │   │   │   │   └── ...
+    │   │   │   ├── plots
+    │   │   │   │   ├── ampl_vel
+    │   │   │   │   │   ├── ET_01-item01-ampl_vel.png
+    │   │   │   │   │   ├── ET_01-item01-ampl_vel_reg.png
+    │   │   │   │   │   ├── ET_01-item02-ampl_vel.png
+    │   │   │   │   │   ├── ET_01-item02-ampl_vel_reg.png
+    │   │   │   │   │   └── ...
+    │   │   │   │   ├── px_time
+    │   │   │   │   │   ├── ET_01-item01-px_time.png
+    │   │   │   │   │   ├── ET_01-item02-px_time.png
+    │   │   │   │   │   └── ...
+    │   │   │   ├── command_log.txt
+    │   │   ├── fixations_corrected
+    │   │   │   ├── event_files
+    │   │   │   │   ├── ET_01-item01-fixations_corrected.csv
+    │   │   │   │   ├── ET_01-item02-fixations_corrected.csv
+    │   │   │   │   └── ...
+    │   │   ├── reading_measures_corrected
+    │   │   │   ├── ET_01-item01-reading_measures_corrected.csv
+    │   │   │   ├── ET_01-item02-reading_measures_corrected.csv
+    │   │   │   └── ...
+    │   │   ├── ET_01.asc
+    │   │   ├── ET_01.csv
+    │   │   ├── ET_01.edf
+    │   │   ├── RESULTS_QUESTIONNAIRE.txt
+    │   │   ├── RESULTS_QUESTIONS.txt
+    │   └── ...
+```
+
+
+### Merging scripts
+
+In order to merge the fixation sequence files and the reading measure files, which are all on a per-subject-per-trial basis, 
+please run 
+```bash
+bash run_merge.sh
+```
+This merges both the uncorrected and the corrected fixations as well as the corrected reading measures into one single file. 
+If the reading measures have also been computed for the uncorrected fixations, uncomment the corresponding line in the bash script 
+and those files will also be merged.
+Additionally, the participant information from the questionnaire and their responses and accuracies to the comprehension questions 
+are merged into single files.
+The final directory structure looks like the following:
 
 ```
 ├── data
-    ├── ET_01
-    │   ├── aoi
-    │   ├── fixations
-    │   │   ├── event_files
-    │   │   │   ├── ET_01-item01-fixations.csv
-    │   │   │   ├── ET_01-item02-fixations.csv
+    ├── participant_info
+    │   ├── participant_info.csv
+    │   ├── participant_results.csv
+    ├── subject_level_data
+    │   ├── ET_01
+    │   │   ├── aoi
+    │   │   ├── fixations
+    │   │   │   ├── event_files
+    │   │   │   │   ├── ET_01-item01-fixations.csv
+    │   │   │   │   ├── ET_01-item02-fixations.csv
+    │   │   │   │   └── ...
+    │   │   │   ├── plots
+    │   │   │   │   ├── ampl_vel
+    │   │   │   │   │   ├── ET_01-item01-ampl_vel.png
+    │   │   │   │   │   ├── ET_01-item01-ampl_vel_reg.png
+    │   │   │   │   │   ├── ET_01-item02-ampl_vel.png
+    │   │   │   │   │   ├── ET_01-item02-ampl_vel_reg.png
+    │   │   │   │   │   └── ...
+    │   │   │   │   ├── px_time
+    │   │   │   │   │   ├── ET_01-item01-px_time.png
+    │   │   │   │   │   ├── ET_01-item02-px_time.png
+    │   │   │   │   │   └── ...
+    │   │   │   ├── command_log.txt
+    │   │   ├── fixations_corrected
+    │   │   │   ├── event_files
+    │   │   │   │   ├── ET_01-item01-fixations_corrected.csv
+    │   │   │   │   ├── ET_01-item02-fixations_corrected.csv
+    │   │   │   │   └── ...
+    │   │   ├── reading_measures_corrected
+    │   │   │   ├── ET_01-item01-reading_measures_corrected.csv
+    │   │   │   ├── ET_01-item02-reading_measures_corrected.csv
     │   │   │   └── ...
-    │   │   ├── plots
-    │   │   │   ├── ampl_vel
-    │   │   │   │   ├── ET_01-item01-ampl_vel.png
-    │   │   │   │   ├── ET_01-item01-ampl_vel_reg.png
-    │   │   │   │   ├── ET_01-item02-ampl_vel.png
-    │   │   │   │   ├── ET_01-item02-ampl_vel_reg.png
-    │   │   │   │   └── ...
-    │   │   │   ├── px_time
-    │   │   │   │   ├── ET_01-item01-px_time.png
-    │   │   │   │   ├── ET_01-item02-px_time.png
-    │   │   │   │   └── ...
-    │   │   ├── command_log.txt
-    │   ├── reading_measures
-    │   │   ├── ET_01-item01-reading_measures.csv
-    │   │   ├── ET_01-item02-reading_measures.csv
-    │   │   └── ...
-    │   ├── ET_01.asc
-    │   ├── ET_01.csv
-    │   ├── ET_01.edf
-    │   ├── RESULTS_QUESTIONNAIRE.txt
-    │   ├── RESULTS_QUESTIONS.txt
-    └── ...
+    │   │   ├── ET_01.asc
+    │   │   ├── ET_01.csv
+    │   │   ├── ET_01.edf
+    │   │   ├── RESULTS_QUESTIONNAIRE.txt
+    │   │   ├── RESULTS_QUESTIONS.txt
+    │   └── ...
+    ├── fixations.csv
+    ├── fixations_corrected.csv
+    ├── reading_measures_corrected.csv
 ```
