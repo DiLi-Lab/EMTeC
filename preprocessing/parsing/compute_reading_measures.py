@@ -12,6 +12,7 @@ import glob
 import pandas as pd
 
 from argparse import ArgumentParser
+from typing import Optional
 
 from preprocessing.utils.loading import load_config
 
@@ -35,6 +36,7 @@ def get_parser() -> ArgumentParser:
 def compute_fixations(
         fixations_df: pd.DataFrame,
         aoi_df: pd.DataFrame,
+        corrected: Optional[bool] = None,
         # path_to_subj: str,
         # fix_dir: str,
         # rm_filename: str,
@@ -98,6 +100,11 @@ def compute_fixations(
             aoi = int(fixation['word_roi_id'])
         except ValueError:
             continue
+        # similarly if for the corrected fixations some were not actually mapped to a word, continue (they would result
+        # in an error because they are attributed the last interest area + 1)
+        if corrected and fixation['word_roi_str'] == '.':
+            continue
+
 
         # update variables
         last_fix_word_idx = cur_fix_word_idx
@@ -215,12 +222,14 @@ def main():
             aoi_filename = f'trialid{TRIAL_ID}_{item_id}_trialindex{Trial_Index_}_coordinates.csv'
             aoi_df = pd.read_csv(os.path.join(path_to_subj, 'aoi', aoi_filename), delimiter='\t')
 
-            rm_filename = f'{subj_id}-{item_id}-reading_measures.csv'
+
 
             if args.corrected:
-                save_basepath = os.path.join(path_to_subj, 'reading_measures')
-            else:
                 save_basepath = os.path.join(path_to_subj, 'reading_measures_corrected')
+                rm_filename = f'{subj_id}-{item_id}-reading_measures_corrected.csv'
+            else:
+                save_basepath = os.path.join(path_to_subj, 'reading_measures')
+                rm_filename = f'{subj_id}-{item_id}-reading_measures.csv'
             path_save_rm_file = os.path.join(save_basepath, rm_filename)
 
             if args.check_file_exists:
@@ -233,9 +242,15 @@ def main():
 
             print(f'---processing file {path_save_rm_file}')
 
+            if args.corrected:
+                corrected = True
+            else:
+                corrected = False
+
             rm_df = compute_fixations(
                 fixations_df=fixations_df,
                 aoi_df=aoi_df,
+                corrected=corrected,
             )
 
             rm_df['subject_id'] = subj_id

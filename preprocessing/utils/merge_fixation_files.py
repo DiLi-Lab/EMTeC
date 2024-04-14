@@ -51,7 +51,6 @@ def main():
             fixations_dfs.append(fix_df)
 
     all_fixs = pd.concat(fixations_dfs)
-    breakpoint()
 
     # rename certain columns
     all_fixs = all_fixs.rename(
