@@ -187,6 +187,7 @@ The `event_files` directory contains the extracted fixations, one file per scree
 
 ### Fixation correction
 
+The manual fixation correction, as opposed to all other preprocessing steps, requires different dependencies. 
 In order to manually correct the extracted fixations, primarily fixing vertical drifts during eye-tracking, please first 
 create a new virtual environment and install the necessary requirements:
 
