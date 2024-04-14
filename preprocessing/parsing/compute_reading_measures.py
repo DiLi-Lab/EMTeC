@@ -222,12 +222,14 @@ def main():
             aoi_filename = f'trialid{TRIAL_ID}_{item_id}_trialindex{Trial_Index_}_coordinates.csv'
             aoi_df = pd.read_csv(os.path.join(path_to_subj, 'aoi', aoi_filename), delimiter='\t')
 
-            rm_filename = f'{subj_id}-{item_id}-reading_measures.csv'
+
 
             if args.corrected:
                 save_basepath = os.path.join(path_to_subj, 'reading_measures_corrected')
+                rm_filename = f'{subj_id}-{item_id}-reading_measures_corrected.csv'
             else:
                 save_basepath = os.path.join(path_to_subj, 'reading_measures')
+                rm_filename = f'{subj_id}-{item_id}-reading_measures.csv'
             path_save_rm_file = os.path.join(save_basepath, rm_filename)
 
             if args.check_file_exists:
