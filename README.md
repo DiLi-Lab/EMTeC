@@ -177,3 +177,47 @@ saccade velocity over amplitude is plotted):
 The `event_files` directory contains the extracted fixations, one file per screen/experimental stimulus. The directory 
 `ampl_vel` contains the plots of saccade amplitude over velocity, and `px_time` contains the coordinates over time plots. 
 `command_log.txt` contains the programm call given in the bash script `run_csv2events.sh`.
+
+
+### Computation of reading measures
+
+To compute word-based reading measures from the fixation sequences, run
+
+```bash
+bash run_events2rms.sh
+```
+The reading measures are saved in one file per screen/experimental stimulus, and the resulting folder structure looks like 
+the following:
+
+```
+├── data
+    ├── ET_01
+    │   ├── aoi
+    │   ├── fixations
+    │   │   ├── event_files
+    │   │   │   ├── ET_01-item01-fixations.csv
+    │   │   │   ├── ET_01-item02-fixations.csv
+    │   │   │   └── ...
+    │   │   ├── plots
+    │   │   │   ├── ampl_vel
+    │   │   │   │   ├── ET_01-item01-ampl_vel.png
+    │   │   │   │   ├── ET_01-item01-ampl_vel_reg.png
+    │   │   │   │   ├── ET_01-item02-ampl_vel.png
+    │   │   │   │   ├── ET_01-item02-ampl_vel_reg.png
+    │   │   │   │   └── ...
+    │   │   │   ├── px_time
+    │   │   │   │   ├── ET_01-item01-px_time.png
+    │   │   │   │   ├── ET_01-item02-px_time.png
+    │   │   │   │   └── ...
+    │   │   ├── command_log.txt
+    │   ├── reading_measures
+    │   │   ├── ET_01-item01-reading_measures.csv
+    │   │   ├── ET_01-item02-reading_measures.csv
+    │   │   └── ...
+    │   ├── ET_01.asc
+    │   ├── ET_01.csv
+    │   ├── ET_01.edf
+    │   ├── RESULTS_QUESTIONNAIRE.txt
+    │   ├── RESULTS_QUESTIONS.txt
+    └── ...
+```

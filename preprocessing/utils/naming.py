@@ -160,17 +160,6 @@ def create_filepath_for_event_file(
     return filepath
 
 
-def create_filename_for_rm_file(
-        subj_id: str,
-        item_id: str,
-        Trial_Index_: str,
-        TRIAL_ID: str,
-        model: str,
-        decoding_strategy: str,
-):
-    filename = f'{subj_id}_trialid{TRIAL_ID}_{item_id}_trialindex{Trial_Index_}_{model}_{decoding_strategy}_reading_measures.csv'
-    return filename
-
 
 def create_filepath_for_asc_file(basepath: str,
                                  subject_id: int,
