@@ -87,4 +87,93 @@ this conversion. The result is an `.asc` file in each subject directory.
 bash run_edf2asc.sh
 ```
 
+```
+├── data
+    ├── ET_01
+    │   ├── aoi
+    │   ├── ET_01.edf
+    │   ├── ET_01.asc
+    │   ├── RESULTS_QUESTIONNAIRE.txt
+    │   ├── RESULTS_QUESTIONS.txt
+    └── ...
+```
 
+### Conversion of `.asc` to `.csv` files
+
+The `.asc` files are parsed and only the relevant information is extracted and written to csv files. While the `.edf` 
+and the `.asc` files are not published, we nevertheless publish the code. To run the parsing of the `.asc` files, 
+simply run
+```bash
+bash run_asc2csv.sh
+```
+The resulting data directory structure will then look like this:
+```
+├── data
+    ├── ET_01
+    │   ├── aoi
+    │   ├── ET_01.asc
+    │   ├── ET_01.csv
+    │   ├── ET_01.edf
+    │   ├── RESULTS_QUESTIONNAIRE.txt
+    │   ├── RESULTS_QUESTIONS.txt
+    └── ...
+```
+
+
+### Fixation extraction
+
+To group coordinate samples from the raw `.csv` files together into fixations and map them to the correct areas of 
+interest (words), please run
+```bash
+bash run_csv2events.sh
+```
+
+The following arguments can be passed:
+* `--disablle-parallel`: disable parallel processing
+* `--plot-px-time`: if given, the raw x- and y-coordinates are plotted over time and the fixations extracted with the algorithm are marked.
+* `--plot-ampl-vel`: if given, the peak saccade velocities are plotted over saccade amplitudes.
+* `--threshold`: the threshold to use in the microsaccade detection algorithm. The default is `trial_based`, i.e. the threshold is estimated for each experimental stimulus individually.
+* `--threshold-factor`: the factor with which the treshold is multiplied to obtain the radius
+* `--threshold-method`: the method to compute the threshold
+* `--min-fixation-duration-ms`: the minimum fixation duration in ms
+* `--min-saccade-duration-ms`: the minimum saccade duration in ms
+* `--max-saccade-velocity`: the maximum saccade velocity in deg/s
+* `--theta`: the velocity threshold in deg/s
+
+Since we publish the raw eye-tracking data, everything from this step onwards is reproducible.
+For each subject, the resulting folder structure will then look like this (if both the coordinates over time as well as the 
+saccade velocity over amplitude is plotted):
+
+
+```
+├── data
+    ├── ET_01
+    │   ├── aoi
+    │   ├── fixations
+    │   │   ├── event_files
+    │   │   │   ├── ET_01-item01-fixations.csv
+    │   │   │   ├── ET_01-item02-fixations.csv
+    │   │   │   └── ...
+    │   │   ├── plots
+    │   │   │   ├── ampl_vel
+    │   │   │   │   ├── ET_01-item01-ampl_vel.png
+    │   │   │   │   ├── ET_01-item01-ampl_vel_reg.png
+    │   │   │   │   ├── ET_01-item02-ampl_vel.png
+    │   │   │   │   ├── ET_01-item02-ampl_vel_reg.png
+    │   │   │   │   └── ...
+    │   │   │   ├── px_time
+    │   │   │   │   ├── ET_01-item01-px_time.png
+    │   │   │   │   ├── ET_01-item02-px_time.png
+    │   │   │   │   └── ...
+    │   │   ├── command_log.txt
+    │   ├── ET_01.asc
+    │   ├── ET_01.csv
+    │   ├── ET_01.edf
+    │   ├── RESULTS_QUESTIONNAIRE.txt
+    │   ├── RESULTS_QUESTIONS.txt
+    └── ...
+```
+
+The `event_files` directory contains the extracted fixations, one file per screen/experimental stimulus. The directory 
+`ampl_vel` contains the plots of saccade amplitude over velocity, and `px_time` contains the coordinates over time plots. 
+`command_log.txt` contains the programm call given in the bash script `run_csv2events.sh`.
