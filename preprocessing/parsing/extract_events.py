@@ -940,7 +940,7 @@ def main():
     n_jobs = config['csv2events']['n_jobs']
     check_file_exists = config['csv2events']['check_file_exists']
 
-    path_to_subjects = 'data/'
+    path_to_subjects = 'data/subject_level_data/'
 
     current_date = datetime.now()
     formatted_date = current_date.strftime('%Y-%m-%d')

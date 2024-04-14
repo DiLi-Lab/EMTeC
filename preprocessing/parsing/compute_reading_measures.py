@@ -182,7 +182,7 @@ def main():
     config = load_config()
     subjects_to_exclude = config['exclude']['subjects']
 
-    paths_to_subj_dirs = glob.glob(os.path.join('data', '*'))
+    paths_to_subj_dirs = glob.glob(os.path.join('data', 'subject_level_data', '*'))
     for path_to_subj in paths_to_subj_dirs:
         subj_id = path_to_subj.split('/')[-1]
         if subj_id in subjects_to_exclude:

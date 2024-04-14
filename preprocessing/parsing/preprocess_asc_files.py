@@ -75,7 +75,7 @@ def main():
 
     config = load_config()
 
-    path_to_data = 'data/'
+    path_to_data = 'data/subject_level_data/'
     experiments = config['asc2csv']['experiments']
     columns = config['asc2csv']['columns']
     n_jobs = config['asc2csv']['n_jobs']

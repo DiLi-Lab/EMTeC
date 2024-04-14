@@ -25,7 +25,7 @@ def get_parser() -> ArgumentParser:
     parser.add_argument(
         '--path-to-data',
         type=str,
-        default='data/',
+        default='data/subject_level_data/',
     )
     return parser
 

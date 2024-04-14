@@ -20,14 +20,15 @@ def main():
     config = load_config()
     exclude_subjects = config['exclude']['subjects']
 
-    subj_dirs = os.listdir('data/')
+    path_to_subjects = 'data/subject_level_data/'
+    subj_dirs = os.listdir(path_to_subjects)
 
     for subj_dir in subj_dirs:
 
         if subj_dir in exclude_subjects:
             continue
 
-        path_to_subj = os.path.join('data', subj_dir)
+        path_to_subj = os.path.join(path_to_subjects, subj_dir)
 
         results = pd.read_csv(os.path.join(path_to_subj, 'RESULTS_QUESTIONS.txt'), sep='\t')
 

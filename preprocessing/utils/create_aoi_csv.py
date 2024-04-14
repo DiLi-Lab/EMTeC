@@ -19,7 +19,7 @@ def main():
     # read in the stimuli
     stimuli = pd.read_csv('stimuli_selection/files/stimuli_and_questions.tsv', sep='\t')
 
-    paths_to_subjects = glob.glob(os.path.join('data', '*'))
+    paths_to_subjects = glob.glob(os.path.join('data', 'subject_level_data', '*'))
 
     for subject in paths_to_subjects:
         results = pd.read_csv(os.path.join(subject, 'RESULTS_QUESTIONS.txt'), sep='\t')
