@@ -24,6 +24,11 @@ def get_parser() -> ArgumentParser:
         default=True,
         help='Check whether reading measures for current fixation file have already been computed.',
     )
+    parser.add_argument(
+        '--corrected',
+        action='store_true',
+        help='whether or not we are looking at the corrected fixations',
+    )
     return parser
 
 
@@ -183,11 +188,15 @@ def main():
     subjects_to_exclude = config['exclude']['subjects']
 
     paths_to_subj_dirs = glob.glob(os.path.join('data', 'subject_level_data', '*'))
+
     for path_to_subj in paths_to_subj_dirs:
         subj_id = path_to_subj.split('/')[-1]
         if subj_id in subjects_to_exclude:
             continue
-        path_to_fix_files = glob.glob(os.path.join(path_to_subj, 'fixations', 'event_files', '*'))
+        if args.corrected:
+            path_to_fix_files = glob.glob(os.path.join(path_to_subj, 'fixations_corrected', 'event_files', '*'))
+        else:
+            path_to_fix_files = glob.glob(os.path.join(path_to_subj, 'fixations', 'event_files', '*'))
         for fix_file in path_to_fix_files:
 
             # account for plots folder
@@ -208,7 +217,10 @@ def main():
 
             rm_filename = f'{subj_id}-{item_id}-reading_measures.csv'
 
-            save_basepath = os.path.join(path_to_subj, 'reading_measures')
+            if args.corrected:
+                save_basepath = os.path.join(path_to_subj, 'reading_measures')
+            else:
+                save_basepath = os.path.join(path_to_subj, 'reading_measures_corrected')
             path_save_rm_file = os.path.join(save_basepath, rm_filename)
 
             if args.check_file_exists:
