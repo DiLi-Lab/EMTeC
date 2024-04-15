@@ -22,6 +22,23 @@ The code is based on the PyTorch and huggingface modules.
 pip install -r requirements.txt
 ```
 
+## Download the data
+
+### Eye-tracking data
+
+**TODO make OSF repo public, adjust URLs**
+
+The eye-tracking data is stored in an [OSF Repostory](https://osf.io/ajqze/). To download and extract it directly. please run
+```bash
+python get_et_data.py --extract
+```
+which will automatically extract all zipped files. It will create a directory `EMTeC/data` that has the folder structure 
+needed for reproducibility purposes.
+
+### Tensors
+
+
+
 
 ## Prompting of LLMs and text generation
 
