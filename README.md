@@ -353,3 +353,16 @@ The final directory structure looks like the following:
     ├── reading_measures_corrected.csv
     ├── stimuli.csv
 ```
+
+## Lexical annotation
+
+### Annotation on text-level
+
+In order to annotate the texts with readability scores, please run
+```bash
+bash run_annotation_text.sh
+```
+The package `readability_local` is a local copy of `py-readability-metrics` (see their [Documentation](https://pypi.org/project/py-readability-metrics/) and their [GitHub](https://github.com/cdimascio/py-readability-metrics/tree/master)),
+as I had to adjust the minimum number of words. This annotation will directly add the readability metrics to the `stimuli.csv` file.
+
+### Annotation on word-level
