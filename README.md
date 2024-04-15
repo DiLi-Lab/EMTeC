@@ -28,7 +28,7 @@ pip install -r requirements.txt
 
 **TODO make OSF repo public, adjust URLs**
 
-The eye-tracking data is stored in an [OSF Repostory](https://osf.io/ajqze/). To download and extract it directly. please run
+The eye-tracking data is stored in an [OSF Repository](https://osf.io/ajqze/). To download and extract it directly. please run
 ```bash
 python get_et_data.py --extract
 ```
@@ -37,6 +37,15 @@ needed for reproducibility purposes.
 
 ### Tensors
 
+**TODO make Dataset public, adjust URL in Readme and python script**
+**TODO check if python script works once Dataset is public**
+
+The transition scores, attention scores, hidden states, and beam indices are stored in a [Harvard Dataverse Dataset](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/GCU0W8&version=DRAFT).
+They can be downloaded from there or via calling
+```bash
+python get_tensors.py
+```
+***Attention:*** The tensors amount to about **340 GB** in size.
 
 
 
