@@ -76,6 +76,7 @@ the result of which should look like the following:
     │   │   ├── RESULTS_QUESTIONNAIRE.txt
     │   │   ├── RESULTS_QUESTIONS.txt
     │   └── ...
+    ├── stimuli.csv
 ```
 
 ### Conversion of `.edf` files to `.asc` files
@@ -99,6 +100,7 @@ bash run_edf2asc.sh
     │   │   ├── RESULTS_QUESTIONNAIRE.txt
     │   │   ├── RESULTS_QUESTIONS.txt
     │   └── ...
+    ├── stimuli.csv
 ```
 
 ### Conversion of `.asc` to `.csv` files
@@ -122,6 +124,7 @@ The resulting data directory structure will then look like this:
     │   │   ├── RESULTS_QUESTIONNAIRE.txt
     │   │   ├── RESULTS_QUESTIONS.txt
     │   └── ...
+    ├── stimuli.csv
 ```
 
 
@@ -178,6 +181,7 @@ saccade velocity over amplitude is plotted):
     │   │   ├── RESULTS_QUESTIONNAIRE.txt
     │   │   ├── RESULTS_QUESTIONS.txt
     │   └── ...
+    ├── stimuli.csv
 ```
 
 The `event_files` directory contains the extracted fixations, one file per screen/experimental stimulus. The directory 
@@ -234,6 +238,7 @@ will iterate through all files of all subjects. The resulting directory structur
     │   │   ├── RESULTS_QUESTIONNAIRE.txt
     │   │   ├── RESULTS_QUESTIONS.txt
     │   └── ...
+    ├── stimuli.csv
 ```
 
 
@@ -285,6 +290,7 @@ done on corrected fixations. If it is omitted, reading measures are computed on 
     │   │   ├── RESULTS_QUESTIONNAIRE.txt
     │   │   ├── RESULTS_QUESTIONS.txt
     │   └── ...
+    ├── stimuli.csv
 ```
 
 
@@ -345,4 +351,5 @@ The final directory structure looks like the following:
     ├── fixations.csv
     ├── fixations_corrected.csv
     ├── reading_measures_corrected.csv
+    ├── stimuli.csv
 ```
