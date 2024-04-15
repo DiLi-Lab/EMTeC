@@ -140,8 +140,7 @@ def main():
     if not os.path.exists(out_path):
         os.makedirs(out_path)
 
-    stimuli_and_questions_df.to_csv(os.path.join(out_path, 'stimuli_and_questions.csv'), index=False)
-    stimuli_and_questions_df.to_csv(os.path.join(out_path, 'stimuli_and_questions.tsv'), index=False, sep='\t')
+    stimuli_and_questions_df.to_csv(os.path.join(out_path, 'stimuli_and_questions.csv'), index=False, sep='\t')
 
 
 
