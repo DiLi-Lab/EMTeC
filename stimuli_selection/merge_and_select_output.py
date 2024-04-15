@@ -136,7 +136,7 @@ def main():
         questions_df=questions_df,
     )
 
-    out_path = 'stimuli_selection/files/'
+    out_path = 'data/'
     if not os.path.exists(out_path):
         os.makedirs(out_path)
 
