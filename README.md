@@ -26,6 +26,8 @@ pip install -r requirements.txt
 
 ### Eye-tracking data
 
+**TODO make OSF repo public, adjust URLs**
+
 The eye-tracking data is stored in an [OSF Repostory](https://osf.io/ajqze/). To download and extract it directly. please run
 ```bash
 python get_et_data.py --extract
