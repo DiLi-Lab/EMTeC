@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """
 Script to compute reading measures from fixation sequences.
 """
+from __future__ import annotations
 
-
-import os
 import glob
+import os
+from argparse import ArgumentParser
 
 import pandas as pd
-
-from argparse import ArgumentParser
-from typing import Optional
 
 from preprocessing.utils.loading import load_config
 
@@ -36,7 +32,7 @@ def get_parser() -> ArgumentParser:
 def compute_reading_measures(
         fixations_df: pd.DataFrame,
         aoi_df: pd.DataFrame,
-        corrected: Optional[bool] = None,
+        corrected: bool | None = None,
 ) -> pd.DataFrame:
     """
     Computes reading measures from fixation sequences.
@@ -51,10 +47,12 @@ def compute_reading_measures(
 
     # append one extra dummy fixation to have the next fixation for the actual last fixation
     pd.concat(
-        [fixations_df,
-         pd.DataFrame(
-             [[0 for _ in range(len(fixations_df.columns))]], columns=fixations_df.columns
-         )],
+        [
+            fixations_df,
+            pd.DataFrame(
+                [[0 for _ in range(len(fixations_df.columns))]], columns=fixations_df.columns,
+            ),
+        ],
         ignore_index=True,
     )
 
@@ -84,7 +82,7 @@ def compute_reading_measures(
             'FPReg': 0,     # first-pass regression (binary)
             'TRC_out': 0,   # total count of outgoing regressions
             'TRC_in': 0,    # total count of incoming regressions
-            #'LP': 0,        # landing position -- cannot have landing position because we don't work with character-based aois
+            # 'LP': 0,        # landing position -- cannot have landing position because we don't work with character-based aois
             'SL_in': 0,     # incoming saccade length
             'SL_out': 0,    # outgoing saccade length
             'TFC': 0,       # total fixation count

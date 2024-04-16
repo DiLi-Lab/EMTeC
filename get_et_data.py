@@ -1,10 +1,10 @@
 #!/usr/bin/env python
+from __future__ import annotations
 
 import os
 import requests
 from argparse import ArgumentParser
 import zipfile
-from typing import Optional
 from tqdm import tqdm
 
 
@@ -19,8 +19,8 @@ def get_parser() -> ArgumentParser:
 
 
 def download_data(
-        extract: Optional[bool] = None,
-        out_path: Optional[str] = None,
+        extract: bool | None  = None,
+        out_path: str | None = None,
 ):
     base_url = 'https://osf.io/download/'
 
@@ -54,9 +54,10 @@ def download_data(
                 zip_ref.extractall(out_path)
 
 
-def main():
+def main() -> int:
     args = get_parser().parse_args()
     download_data(extract=args.extract, out_path='data')
+    return 0
 
 
 if __name__ == '__main__':

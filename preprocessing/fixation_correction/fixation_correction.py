@@ -104,9 +104,9 @@ def readFixs(fixfile):
             roifile = os.path.join(roi_dir, roi_filename)
 
     yield Fixations.sort_index()
+
+
 # Focus fixation
-
-
 def focus(index):
     bg.coords(focusobj, bg.coords(Fixs.loc[index, 'objid']))
     bg.tag_raise(focusobj)
@@ -133,7 +133,6 @@ def roiindex(x, y):
 
 def keybindings(event):
     global fix_index
-#  print(event.keysym)
     if event.keysym == 'Right':
         if fix_index < Fixs.shape[0]:
             if fix_index > 0:
@@ -463,7 +462,6 @@ for subject_dir in subject_dirs:
                 col = min(col, len(collimits[row])-2)
                 rowl = rowlimits
                 coll = collimits[row]
-                # print(col,len(coll))
                 roix = (coll[col]+coll[col+1])/2.
                 roiy = (rowl[row]+rowl[row+1])/2.
                 roi.append(roiindex(col, row))
@@ -509,16 +507,7 @@ for subject_dir in subject_dirs:
             Fixs['index_inline'] = index_inline
 
             selected = []
-    # Einruecken fuer for-loop..
             window.mainloop()
-            # print(Fixs)
-    #  Fixs['roiend']=[Fixs['roi']-[]Fixs['roi']]
-    #         Fixs.to_csv(
-    #             path_or_buf='blub.tst', sep='\t', na_rep='.', float_format=None, columns=None, header=True,
-    #             index=True, index_label=None, mode='w', encoding=None, compression=None, quoting=None,
-    #             quotechar='"', line_terminator='\n', chunksize=None, date_format=None,
-    #             doublequote=True, escapechar=None, decimal='.',
-    #         )  # TODO: scale bringt roimappings durcheinander, scale=1 bis gefixt
             Fixs['line'] = Fixs['line']+1  # damits konsistent bei 1 losgeht
             Fixs['index_inline'] = Fixs['index_inline']+1
             NFix = Fixs.shape[0]
@@ -553,8 +542,6 @@ for subject_dir in subject_dirs:
                 'echo "Number of adjusted Fixations in "'+
                 str(np.sum(Fixs['Fix_adjusted']))+' >> trimFix.log',
             )
-            #Fixs['RECORDING_SESSION_LABEL'] = f"{reader}_{roi_filename.split('.')[0]}"
-            #Fixs['itemid'] = roi_filename
             Fixs = Fixs.drop(
                 [
                     'CURRENT_FIX_INTEREST_AREA_INDEX',
@@ -563,8 +550,6 @@ for subject_dir in subject_dirs:
             )
             if not os.path.exists(corr_fix_savepath):
                 os.makedirs(corr_fix_savepath)
-            #os.makedirs('corrected-fixations', exist_ok=True)
-            #save_path = os.path.join("corrected-fixations", fr"reader{reader}_{roi_filename.split('.')[0]}.justfix")
             save_path = os.path.join(corr_fix_savepath, file_name_corr_fix)
             Fixs.to_csv(
                 path_or_buf=save_path,

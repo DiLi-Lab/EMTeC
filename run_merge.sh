@@ -1,4 +1,5 @@
 #!/bin/sh
+set -euxo pipefail
 
 # merge participant information
 python -m preprocessing.utils.merge_participant_info

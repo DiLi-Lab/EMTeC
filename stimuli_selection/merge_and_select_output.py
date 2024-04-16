@@ -3,21 +3,22 @@
 Script to merge the model outputs and select only those outputs that will be used as stimuli in the eye-tracking
 experiment.
 """
+from __future__ import annotations
 
 import os
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Any
+from typing import Any
 
 
 def add_to_dict(
         path: str,
-        stimuli_dict: Dict[str, List[Any]],
+        stimuli_dict: dict[str, list[Any]],
         list_attribution: pd.DataFrame,
         selected_items: np.array,
         model: str,
         prompts_introductory_screens_items: pd.DataFrame,
-        orig_columns: List[str],
+        orig_columns: list[str],
 ) -> pd.DataFrame:
     assert model in path
     files = os.listdir(path)
@@ -30,7 +31,7 @@ def add_to_dict(
             list_attr = list_attribution[list_attribution['condition'] == file][item_id].values[0]
             introductory_screen_item = prompts_introductory_screens_items[
                 prompts_introductory_screens_items['item_id'] == item_id
-                ]['introductory_screen_item'].values[0]
+            ]['introductory_screen_item'].values[0]
             stimuli_dict['list'].append(list_attr)
             stimuli_dict['model'].append(model)
             stimuli_dict['filename'].append(file)
@@ -45,7 +46,7 @@ def add_to_dict(
 def add_questions(
         stimuli_df: pd.DataFrame,
         questions_df: pd.DataFrame,
-):
+) -> pd.DataFrame:
     stimuli_df['question'] = ''
     stimuli_df['answer1'] = ''
     stimuli_df['answer2'] = ''
@@ -68,8 +69,7 @@ def add_questions(
         stimuli_df.loc[(stimuli_df['item_id'] == item_id) & (stimuli_df['filename'] == filename), 'answer2'] = answer2
         stimuli_df.loc[(stimuli_df['item_id'] == item_id) & (stimuli_df['filename'] == filename), 'answer3'] = answer3
         stimuli_df.loc[(stimuli_df['item_id'] == item_id) & (stimuli_df['filename'] == filename), 'answer4'] = answer4
-        stimuli_df.loc[(stimuli_df['item_id'] == item_id) & (
-                    stimuli_df['filename'] == filename), 'correct_answer'] = correct_answer
+        stimuli_df.loc[(stimuli_df['item_id'] == item_id) & (stimuli_df['filename'] == filename), 'correct_answer'] = correct_answer
 
     return stimuli_df
 

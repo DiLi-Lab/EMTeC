@@ -1,4 +1,5 @@
 #!/bin/sh
+set -euxo pipefail
 
 # run all models with all decoding strategies on all prompts
 

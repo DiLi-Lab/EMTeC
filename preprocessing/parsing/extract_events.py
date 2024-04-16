@@ -1,33 +1,35 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Code for preprocessing raw samples into fixation and saccade events
 Coding: fixation=1, saccade=2, corrupt=3
 """
+from __future__ import annotations
 
+import glob
 import logging
 import os
-import sys
-import glob
 import pickle
+import sys
+from argparse import ArgumentParser
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
-from datetime import datetime
-from typing import Dict, List, Union, Any, Optional, Tuple
-from joblib import Parallel, delayed
-from argparse import ArgumentParser
+from joblib import delayed
+from joblib import Parallel
 
+from preprocessing.parsing.data_analysis import extract_fixation_means
+from preprocessing.parsing.ed_helpers import compute_peak_velocity_and_amplitude
+from preprocessing.parsing.ed_helpers import corruptSamplesIdx
+from preprocessing.parsing.ed_helpers import estimate_threshold
+from preprocessing.parsing.ed_helpers import microsacc
+from preprocessing.parsing.ed_helpers import pix2deg
+from preprocessing.parsing.ed_helpers import vecvel
+from preprocessing.parsing.map_fix_to_roi import get_aois_from_event_data
 from preprocessing.utils.loading import load_config
 from preprocessing.utils.naming import create_filepath_for_event_file
-from preprocessing.utils.plotting import plot_px_over_time, plot_ampl_over_vel
-from preprocessing.parsing.ed_helpers import pix2deg, corruptSamplesIdx, microsacc, estimate_threshold, vecvel
-from preprocessing.parsing.ed_helpers import pix2deg, corruptSamplesIdx, microsacc,  vecvel
-from preprocessing.parsing.ed_helpers import compute_peak_velocity_and_amplitude
-from preprocessing.parsing.data_analysis import extract_fixation_means
-from preprocessing.parsing.map_fix_to_roi import get_aois_from_event_data
-
-import matplotlib.pyplot as plt
+from preprocessing.utils.plotting import plot_ampl_over_vel
+from preprocessing.utils.plotting import plot_px_over_time
 
 
 def get_parser() -> ArgumentParser:
@@ -91,7 +93,7 @@ def get_parser() -> ArgumentParser:
     return parser
 
 
-def group_df(df):
+def group_df(df: pd.DataFrame):
     grouped = df.groupby('item_id')
     sub_dfs = list()
     for item_id, group in grouped:
@@ -99,26 +101,25 @@ def group_df(df):
     return sub_dfs
 
 
-
 def process_csv_to_events(
         path_to_subjects: str,
-        columns: Union[str, Dict[str, str]],
-        exclude_subjects: List[str],
+        columns: str | dict[str, str],
+        exclude_subjects: list[str],
         n_jobs: int = 1,
-        threshold: Optional[Any] = 'trial_based',
-        threshold_factor: Optional[Any] = 3,
-        threshold_method: Optional[Any] = 'engbert2015',
-        min_fixation_duration_ms: Optional[int] = 20,
-        min_saccade_duration_ms: Optional[int] = 6,
-        max_saccade_velocity: Optional[int] = 600,
-        theta: Optional[float] = 0.6,
+        threshold: str = 'trial_based',
+        threshold_factor: int = 3,
+        threshold_method: str = 'engbert2015',
+        min_fixation_duration_ms: int = 20,
+        min_saccade_duration_ms: int = 6,
+        max_saccade_velocity: int = 600,
+        theta: float = 0.6,
         eye: str = 'right',
         unit: str = 'px',
         disable_parallel: bool = True,
         plot_px_time: bool = False,
         plot_ampl_velocity: bool = False,
         check_file_exists: bool = True,
-):
+) -> int:
 
     subj_dirs = glob.glob(os.path.join(path_to_subjects, '*'))
     logging.info(f'Input files ({len(subj_dirs)}): {subj_dirs}')
@@ -168,14 +169,22 @@ def process_csv_to_events(
                 plot_px_time=plot_px_time,
                 plot_ampl_velocity=plot_ampl_velocity,
             )
-        for subj_dir in subj_dirs)
+            for subj_dir in subj_dirs
+        )
 
     return 0
 
 
 # Experiment configuration:
 class Screen:  # properties of the screen
-    def __init__(self, screenPX_x, screenPX_y, screenCM_x, screenCM_y, dist):
+    def __init__(
+        self,
+        screenPX_x: int | float,
+        screenPX_y: int | float,
+        screenCM_x: int | float,
+        screenCM_y: int | float,
+        dist: int | float,
+    ):
         self.px_x = screenPX_x  # width of the screen in pixels (resolution)
         self.px_y = screenPX_y  # height of the screen in pixels (resolution)
         self.cm_x = screenCM_x  # width of the screen in cm
@@ -190,12 +199,12 @@ class Screen:  # properties of the screen
 class Experiment:
     def __init__(
             self,
-            screenPX_x,  # width of the screen in pixels (resolution)
-            screenPX_y,  # height of the screen in pixels (resolution)
-            screenCM_x,  # width of the screen in cm
-            screenCM_y,  # height of the screen in cm
-            dist,        # distance between eyes and the screen
-            sampling,    # the sampling rate
+            screenPX_x: int | float,  # width of the screen in pixels (resolution)
+            screenPX_y: int | float,  # height of the screen in pixels (resolution)
+            screenCM_x: int | float,  # width of the screen in cm
+            screenCM_y: int | float,  # height of the screen in cm
+            dist: int | float,        # distance between eyes and the screen
+            sampling: int | float,    # the sampling rate
     ):
         self.sampling = sampling  # sampling rate in Hz
         self.dist = dist  # eye-to-screen distance in cm
@@ -204,30 +213,30 @@ class Experiment:
 
 # = process_asc_to_csv
 def readfile_event(
-        Experiment_Class,
+        Experiment_Class: Experiment,
         subj_dir: str,
-        columns: Union[str, Dict[str, str]],
-        exclude_subjects: List[str],
-        threshold: Optional[Any] = 'trial_based',
-        threshold_factor: Optional[Any] = 3,
-        threshold_method: Optional[Any] = 'engbert2015',
-        min_fixation_duration_ms: Optional[int] = 20,
-        min_saccade_duration_ms: Optional[int] = 6,
-        max_saccade_velocity: Optional[int] = 600,
-        theta: Optional[float] = 0.6,
-        eye: Optional[str] = 'right',
-        unit: Optional[str] = 'px',
-        start_time: Optional[bool] = False,
-        down_sampling_factor: Optional[int] = 1,
-        trial_based_time: Optional[bool] = False,
-        check_file_exists: Optional[bool] = True,
-        plot_px_time: Optional[bool] = False,
-        plot_ampl_velocity: Optional[bool] = False,
+        columns: str | dict[str, str],
+        exclude_subjects: list[str],
+        threshold: str = 'trial_based',
+        threshold_factor: int = 3,
+        threshold_method: str = 'engbert2015',
+        min_fixation_duration_ms: int = 20,
+        min_saccade_duration_ms: int = 6,
+        max_saccade_velocity: int = 600,
+        theta: float = 0.6,
+        eye: str = 'right',
+        unit: str = 'px',
+        start_time: bool = False,
+        down_sampling_factor: int = 1,
+        trial_based_time: bool = False,
+        check_file_exists: bool = True,
+        plot_px_time: bool = False,
+        plot_ampl_velocity: bool = False,
 ):
     """
     read file to get one event per line
     """
-    subj_id = subj_dir.split("/")[-1]
+    subj_id = subj_dir.split('/')[-1]
 
     if subj_id in exclude_subjects:
         print(f'---excluding subject {subj_id}')
@@ -248,14 +257,16 @@ def readfile_event(
     with open(os.path.join(subj_dir, f'{subj_id}_idx_to_id.pickle'), 'rb') as pickle_file:
         mapping_dict = pickle.load(pickle_file)
 
-    conversion_factor = Experiment_Class.sampling/1000
+    conversion_factor = Experiment_Class.sampling / 1000
     min_fixation_duration_samples = min_fixation_duration_ms * conversion_factor
     min_saccade_duration_samples = min_saccade_duration_ms * conversion_factor
 
     print(f'preprocessing of file {csv_filepath}')
 
-    logging.basicConfig(format='%(levelname)s::%(message)s',
-                            level=logging.INFO)
+    logging.basicConfig(
+        format='%(levelname)s::%(message)s',
+        level=logging.INFO,
+    )
 
     logging.info(f'parsing file {csv_filepath}')
 
@@ -328,10 +339,9 @@ def readfile_event(
     # split the dataframe into the individual texts
     sub_dfs = group_df(d)
 
-
     for sub_df in sub_dfs:
 
-        assert len(sub_df['item_id'].unique()) == 1,  "The column item_id doesn't have only one unique value."
+        assert len(sub_df['item_id'].unique()) == 1, "The column item_id doesn't have only one unique value."
         assert len(sub_df['TRIAL_ID'].unique()) == 1, "The column TRIAL_ID doesn't have only one unique value."
         assert len(sub_df['Trial_Index_'].unique()) == 1, "The column Trial_Index_ doesn't have only one unique value."
         assert len(sub_df['model'].unique()) == 1, "The column model doesn't have only one unique value."
@@ -362,7 +372,7 @@ def readfile_event(
                 # compute velocities based on all trials of current subject
                 v_est = vecvel(
                     x=np.array(d[['x_deg', 'y_deg']]),
-                    sampling_rate=sampling
+                    sampling_rate=sampling,
                 )
             else:
                 raise ValueError(f'Threshold {threshold} not implemented.')
@@ -406,11 +416,11 @@ def readfile_event(
         # dataframe where one row contains one event (sequence of samples)
         if unit == 'velocity':
             # provide cols in alphabetical order
-            event_dat = pd.DataFrame(columns=sorted(set(columns['sample_velocity']+columns['reading'])))
+            event_dat = pd.DataFrame(columns=sorted(set(columns['sample_velocity'] + columns['reading'])))
         elif unit == 'deg':
-            event_dat = pd.DataFrame(columns=sorted(set(columns['sample_deg']+columns['reading'])))
+            event_dat = pd.DataFrame(columns=sorted(set(columns['sample_deg'] + columns['reading'])))
         else:
-            event_dat = pd.DataFrame(columns=sorted(set(columns['sample_px']+columns['reading'])))
+            event_dat = pd.DataFrame(columns=sorted(set(columns['sample_px'] + columns['reading'])))
 
         # iterate over all samples starting from line 2 (x_deg is nan in first row)
         for index, row in sub_df.iloc[1:].iterrows():
@@ -422,7 +432,8 @@ def readfile_event(
                     # after having removed the corrupt samples, event length can be very short;
                     # ---> re-label too short events as corrupt
                     if (event == 1 and len(x_px) < min_fixation_duration_samples) or (
-                            event == 2 and len(x_px) < min_saccade_duration_samples):
+                            event == 2 and len(x_px) < min_saccade_duration_samples
+                    ):
                         event = 3
                     # write event to file (also corrupt event)
                     #event_dat = write_event_to_file(event, event_dat, row, unit, x, y, t)
@@ -430,16 +441,17 @@ def readfile_event(
 
                 # create new event
                 event = row['event']  # update event
-                #x, y, t = update_xy_event(row, unit)
+                # x, y, t = update_xy_event(row, unit)
                 x_ddeg, y_ddeg, x_deg, y_deg, x_px, y_px, t = update_xy_event_all(row)
             else:  # event continues
-                #continue_xy_event(row, unit, x, y, t)
+                # continue_xy_event(row, unit, x, y, t)
                 continue_xy_event_all(row, x_ddeg, y_ddeg, x_deg, y_deg, x_px, y_px, t)
 
         # end of file: write the last event
         # re-label too short events as corrupt
         if (event == 1 and len(x_px) < min_fixation_duration_samples) or (
-            event == 2 and len(x_px) < min_saccade_duration_samples):
+            event == 2 and len(x_px) < min_saccade_duration_samples
+        ):
             event = 3
         event_dat = write_event_to_file_all(event, event_dat, row, x_ddeg, y_ddeg, x_deg, y_deg, x_px, y_px, t)
 
@@ -512,12 +524,14 @@ def readfile_event(
             for t in unique_trials:
                 trial_start_time = event_dat.loc[event_dat.trial_id == t, 'start_time'].get_values()[0]
                 event_dat.loc[event_dat.trial_id == t, 'start_time'] = event_dat.loc[
-                    event_dat.trial_id == t, 'start_time'] - trial_start_time
+                    event_dat.trial_id == t, 'start_time',
+                ] - trial_start_time
                 event_dat.loc[event_dat.trial_id == t, 'end_time'] = event_dat.loc[
-                    event_dat.trial_id == t, 'end_time'] - trial_start_time
+                    event_dat.trial_id == t, 'end_time',
+                ] - trial_start_time
 
         # convert event length to durations in milliseconds
-        event_dat['event_duration'] = event_dat['event_len']*(1000/Experiment_Class.sampling)
+        event_dat['event_duration'] = event_dat['event_len'] * (1000 / Experiment_Class.sampling)
 
         event_dat = select_fixations(d, event_dat)
         event_dat = event_dat.drop(columns=['seq_t'])
@@ -555,7 +569,7 @@ def readfile_event(
         event_dat.to_csv(filepath, index=True, sep='\t', na_rep='NaN')
 
 
-def select_fixations(d, event_dat):
+def select_fixations(d: pd.DataFrame, event_dat: pd.DataFrame):
     event_dat = event_dat[event_dat['event'] == 1]
     event_dat = event_dat.drop(columns=['seq_x', 'seq_y'])
     event_dat['index'] = range(1, len(event_dat) + 1)
@@ -564,14 +578,15 @@ def select_fixations(d, event_dat):
     return event_dat
 
 
-def get_event_type(duration):
+def get_event_type(duration: float):
     if duration < 9:
         return 'microsaccade'
     else:
         return 'saccade'
 
-    # apply the function to create a new column called "type"
-def select_saccades(d, event_dat):
+
+# apply the function to create a new column called "type"
+def select_saccades(d: pd.DataFrame, event_dat: pd.DataFrame):
     event_dat = event_dat[event_dat['event'] == 2]
     event_dat = event_dat.drop(columns=['seq_x', 'seq_y'])
     event_dat['index'] = range(1, len(event_dat) + 1)
@@ -581,8 +596,7 @@ def select_saccades(d, event_dat):
     return event_dat
 
 
-
-def choose_data_from_right(d):
+def choose_data_from_right(d: pd.DataFrame):
     d['x_deg'] = d['x_right_deg']
     d['y_deg'] = d['y_right_deg']
     d['dx_deg'] = d['dx_right_deg']
@@ -592,7 +606,7 @@ def choose_data_from_right(d):
     d['t'] = d['time']
 
 
-def choose_data_from_left(d):
+def choose_data_from_left(d: pd.DataFrame):
     d['x_deg'] = d['x_left_deg']
     d['y_deg'] = d['y_left_deg']
     d['dx_deg'] = d['dx_left_deg']
@@ -602,7 +616,7 @@ def choose_data_from_left(d):
     d['t'] = d['time']
 
 
-def continue_xy_event(row, unit, x, y, t):
+def continue_xy_event(row: pd.core.series.Series, unit: str, x: list[float], y: list[float], t: list[float]):
     if unit == 'velocity':
         x.append(row['dx_deg'])
         y.append(row['dy_deg'])
@@ -617,7 +631,16 @@ def continue_xy_event(row, unit, x, y, t):
         t.append(row['t'])
 
 
-def continue_xy_event_all(row, x_ddeg, y_ddeg, x_deg, y_deg, x_px, y_px, t):
+def continue_xy_event_all(
+        row: pd.core.series.Series,
+        x_ddeg: float,
+        y_ddeg: float,
+        x_deg: float,
+        y_deg: float,
+        x_px: float,
+        y_px: float,
+        t: float,
+):
     x_ddeg.append(row['dx_deg'])
     y_ddeg.append(row['dy_deg'])
     x_deg.append(row['x_deg'])
@@ -627,7 +650,10 @@ def continue_xy_event_all(row, x_ddeg, y_ddeg, x_deg, y_deg, x_px, y_px, t):
     t.append(row['t'])
 
 
-def update_xy_event(row, unit):
+def update_xy_event(
+        row: pd.core.series.Series,
+        unit: str,
+) -> tuple[list[float], list[float], list[float]]:
     if unit == 'velocity':
         x = [row['dx_deg']]
         y = [row['dy_deg']]
@@ -643,7 +669,7 @@ def update_xy_event(row, unit):
     return x, y, t
 
 
-def update_xy_event_all(row):
+def update_xy_event_all(row: pd.core.series.Series) -> tuple[list[float], ...]:
     x_ddeg = [row['dx_deg']]
     y_ddeg = [row['dy_deg']]
     x_deg = [row['x_deg']]
@@ -654,74 +680,109 @@ def update_xy_event_all(row):
     return x_ddeg, y_ddeg, x_deg, y_deg, x_px, y_px, t
 
 
-def write_event_to_file(event, event_dat, row, unit, x, y, t):
+def write_event_to_file(
+        event: str,
+        event_dat: pd.DataFrame,
+        row: pd.core.series.Series,
+        unit: str,
+        x: float,
+        y: float,
+        t: float,
+) -> pd.DataFrame:
     if unit == 'velocity':
-        event_dat = pd.concat([event_dat, pd.DataFrame(
-            {
-                'seq_dx_deg': [x],
-                'seq_dy_deg': [y],
-                'seq_t': [t],
-                'item_id': row['item_id'],
-                'TRIAL_ID': row['TRIAL_ID'],
-                'Trial_Index_': row['Trial_Index_'],
-                'subject_id': row['subject_id'],
-                'model': row['model'],
-                'decoding_strategy': row['decoding_strategy'],
-                'event': event,
-             },
-        )], axis=0, sort=True)
+        event_dat = pd.concat(
+            [
+                event_dat, pd.DataFrame(
+                    {
+                        'seq_dx_deg': [x],
+                        'seq_dy_deg': [y],
+                        'seq_t': [t],
+                        'item_id': row['item_id'],
+                        'TRIAL_ID': row['TRIAL_ID'],
+                        'Trial_Index_': row['Trial_Index_'],
+                        'subject_id': row['subject_id'],
+                        'model': row['model'],
+                        'decoding_strategy': row['decoding_strategy'],
+                        'event': event,
+                    },
+                ),
+            ], axis=0, sort=True,
+        )
     elif unit == 'deg':
-        event_dat = pd.concat([event_dat, pd.DataFrame(
-            {
-                'seq_x_deg': [x],
-                'seq_y_deg': [y],
-                'seq_t': [t],
-                'item_id': row['item_id'],
-                'TRIAL_ID': row['TRIAL_ID'],
-                'Trial_Index_': row['Trial_Index_'],
-                'subject_id': row['subject_id'],
-                'model': row['model'],
-                'decoding_strategy': row['decoding_strategy'],
-                'event': event,
-             }
-        )], axis=0, sort=True)
+        event_dat = pd.concat(
+            [
+                event_dat, pd.DataFrame(
+                    {
+                        'seq_x_deg': [x],
+                        'seq_y_deg': [y],
+                        'seq_t': [t],
+                        'item_id': row['item_id'],
+                        'TRIAL_ID': row['TRIAL_ID'],
+                        'Trial_Index_': row['Trial_Index_'],
+                        'subject_id': row['subject_id'],
+                        'model': row['model'],
+                        'decoding_strategy': row['decoding_strategy'],
+                        'event': event,
+                    },
+                ),
+            ], axis=0, sort=True,
+        )
     else:
-        event_dat = pd.concat([event_dat, pd.DataFrame(
-            {
-                'seq_x': [x],
-                'seq_y': [y],
-                'seq_t': [t],
-                'item_id': row['item_id'],
-                'TRIAL_ID': row['TRIAL_ID'],
-                'Trial_Index_': row['Trial_Index_'],
-                'subject_id': row['subject_id'],
-                'model': row['model'],
-                'decoding_strategy': row['decoding_strategy'],
-                'event': event,
-             }
-        )], axis=0, sort=True)
+        event_dat = pd.concat(
+            [
+                event_dat, pd.DataFrame(
+                    {
+                        'seq_x': [x],
+                        'seq_y': [y],
+                        'seq_t': [t],
+                        'item_id': row['item_id'],
+                        'TRIAL_ID': row['TRIAL_ID'],
+                        'Trial_Index_': row['Trial_Index_'],
+                        'subject_id': row['subject_id'],
+                        'model': row['model'],
+                        'decoding_strategy': row['decoding_strategy'],
+                        'event': event,
+                    },
+                ),
+            ], axis=0, sort=True,
+        )
     return event_dat
 
 
-def write_event_to_file_all(event, event_dat, row, x_ddeg, y_ddeg, x_deg, y_deg, x_px, y_px, t):
-    event_dat = pd.concat([event_dat, pd.DataFrame(
-        {
-            'seq_dx_deg': [x_ddeg],
-            'seq_dy_deg': [y_ddeg],
-            'seq_x_deg': [x_deg],
-            'seq_y_deg': [y_deg],
-            'seq_x': [x_px],
-            'seq_y': [y_px],
-            'seq_t': [t],
-            'item_id': row['item_id'],
-            'TRIAL_ID': row['TRIAL_ID'],
-            'Trial_Index_': row['Trial_Index_'],
-            'subject_id': row['subject_id'],
-            'model': row['model'],
-            'decoding_strategy': row['decoding_strategy'],
-            'event': event,
-        }
-    )], axis=0, sort=True)
+def write_event_to_file_all(
+        event: str,
+        event_dat: pd.DataFrame,
+        row: pd.core.series.Series,
+        x_ddeg: float,
+        y_ddeg: float,
+        x_deg: float,
+        y_deg: float,
+        x_px: float,
+        y_px: float,
+        t: float,
+) -> pd.DataFrame:
+    event_dat = pd.concat(
+        [
+            event_dat, pd.DataFrame(
+                {
+                    'seq_dx_deg': [x_ddeg],
+                    'seq_dy_deg': [y_ddeg],
+                    'seq_x_deg': [x_deg],
+                    'seq_y_deg': [y_deg],
+                    'seq_x': [x_px],
+                    'seq_y': [y_px],
+                    'seq_t': [t],
+                    'item_id': row['item_id'],
+                    'TRIAL_ID': row['TRIAL_ID'],
+                    'Trial_Index_': row['Trial_Index_'],
+                    'subject_id': row['subject_id'],
+                    'model': row['model'],
+                    'decoding_strategy': row['decoding_strategy'],
+                    'event': event,
+                },
+            ),
+        ], axis=0, sort=True,
+    )
     return event_dat
 
 
@@ -762,5 +823,5 @@ def main():
     logging.info(f'Took {datetime.now() - start_time} overall')
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    raise SystemExit(main())

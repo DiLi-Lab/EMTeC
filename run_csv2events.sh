@@ -1,4 +1,5 @@
 #!/bin/sh
+set -euxo pipefail
 
 python3 -m preprocessing.utils.create_aoi_csv
 

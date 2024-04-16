@@ -4,13 +4,13 @@
 """
 Functions to plot the tracked coordinates and saccade velocity over amplitude.
 """
+from __future__ import annotations
 
 import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import stats
-from typing import List
 from preprocessing.parsing.ed_helpers import compute_peak_velocity_and_amplitude
 
 
@@ -111,8 +111,8 @@ def plot_ampl_over_vel(
 
 
 def plot_ampl_over_vel_all_trials(
-        velocities: List[List[float]],
-        amplitudes: List[List[float]],
+        velocities: list[list[float]],
+        amplitudes: list[list[float]],
         subj_id: str,
         event_dir: str,
 ):

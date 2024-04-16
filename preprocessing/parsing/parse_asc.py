@@ -11,33 +11,34 @@ Extract recording samples on the texts;
 remove samples on practice trials and on headers;
 remove samples between trials (calibration)
 """
+from __future__ import annotations
 
-import re
-import os
 import codecs
-import pickle
 import logging
+import os
+import pickle
 from collections import defaultdict
-from typing import Dict, List, Union
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 import preprocessing.parsing.message_patterns as mp
 
 
 def parse_asc_file(
         filepath: str,
-        experiments: List[str],
-        columns: Union[str, Dict[str, str]],
-        exclude_screens: Dict[str, List[int]],
+        experiments: list[str],
+        columns: str | dict[str, str],
+        exclude_screens: dict[str, list[int]],
         check_file_exists: bool = True,
-):
+) -> int:
     filename = filepath.split('/')[-1]
     subject_id = filename[:-4]
     filepath_csv = filepath[:-4] + '.csv'
-    logging.basicConfig(format='%(levelname)s::%(message)s',
-                        level=logging.INFO)
+    logging.basicConfig(
+        format='%(levelname)s::%(message)s',
+        level=logging.INFO,
+    )
     logging.info(f'parsing file {filename}')
 
     # Skip if all csv files exist
@@ -131,9 +132,11 @@ def parse_asc_file(
                 if column == 'time':
                     try:
                         value = int(value)
-                    except:
-                        logging.error(f'TIMESTAMP COULD NOT BE CASTED AS'
-                                      f' INTEGER! Aborting {filename}!')
+                    except ValueError:
+                        logging.error(
+                            f'TIMESTAMP COULD NOT BE CASTED AS'
+                            f' INTEGER! Aborting {filename}!',
+                        )
                         return -1
                 else:
                     try:
@@ -147,7 +150,7 @@ def parse_asc_file(
             if curr_exp == 'reading':
 
                 # make sure that the idx and ids are correct
-                if not subject_id in ['ET_64']:
+                if subject_id not in ['ET_64']:
                     assert TRIAL_ID == idx_to_id_dict[Trial_Index_][0]
                     assert item_id == idx_to_id_dict[Trial_Index_][1]
                     assert trial_ctr == TRIAL_ID

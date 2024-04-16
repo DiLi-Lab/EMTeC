@@ -1,7 +1,7 @@
 import os
 import yaml
 
-def load_config(path: str = None):
+def load_config(path: str | None = None):
     if path is None:
         path = os.path.abspath('preprocessing/config.yaml')
     with open(path) as f:

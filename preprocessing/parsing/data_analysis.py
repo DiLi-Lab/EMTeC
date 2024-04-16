@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 
-def extract_fixation_means(
-        events_df: pd.DataFrame,
-):
+def extract_fixation_means(events_df: pd.DataFrame) -> tuple[list[float], ...]:
     """
     Extracts the mean x and y coordinates of fixations from the events dataframe.
     :param events_df: pandas dataframe with columns 'seq_x', 'seq_y', 'event'

@@ -1,20 +1,24 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 
-
-import os
 import os.path
 from argparse import ArgumentParser
+from typing import Any
 
-from typing import Dict, List, Any, Optional, Tuple
-
-import torch
 import numpy as np
 import pandas as pd
+import torch
 import transformers
-from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig, set_seed, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM
+from transformers import AutoTokenizer
+from transformers import BitsAndBytesConfig
+from transformers import GenerationConfig
+from transformers import set_seed
 
-from generation.generation_utils import create_generation_config, generate_texts
-from generation.generation_constants import tensor_path, cache_path
+from generation.generation_constants import cache_path
+from generation.generation_constants import tensor_path
+from generation.generation_utils import create_generation_config
+from generation.generation_utils import generate_texts
 
 
 def get_parser() -> ArgumentParser:

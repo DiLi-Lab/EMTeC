@@ -1,38 +1,36 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """
 Script that reads through the ascii files, extracts the relevant information and writes it into csv files.
 """
+from __future__ import annotations
 
+import glob
 import logging
 import os
-import glob
-
 from datetime import datetime
-from joblib import Parallel, delayed
-from typing import Dict, List, Union
-from argparse import ArgumentParser
 
-import numpy as np
+from joblib import delayed
+from joblib import Parallel
 
-from preprocessing.utils.loading import load_config
 from preprocessing.parsing.parse_asc import parse_asc_file
+from preprocessing.utils.loading import load_config
 
 
-logging.basicConfig(format='%(levelname)s::%(message)s',
-                    level=logging.INFO)
+logging.basicConfig(
+    format='%(levelname)s::%(message)s',
+    level=logging.INFO,
+)
 
 
 def process_asc_to_csv(
         path_to_data: str,
-        experiments: List[str],
-        columns: Union[str, Dict[str, str]],
-        exclude_subjects: List[str],
-        exclude_screens: Dict[str, List[int]],
+        experiments: list[str],
+        columns: str | dict[str, str],
+        exclude_subjects: list[str],
+        exclude_screens: dict[str, list[int]],
         n_jobs: int = 1,
         check_file_exists: bool = True,
-):
+) -> int:
 
     subj_dirs = glob.glob(os.path.join(path_to_data, '*'))
 
@@ -47,12 +45,15 @@ def process_asc_to_csv(
 
     # parse files in parallel
     done = Parallel(n_jobs=n_jobs)(
-        delayed(parse_asc_file)(filepath=asc_file_path,
-                                experiments=experiments,
-                                columns=columns,
-                                exclude_screens=exclude_screens,
-                                check_file_exists=check_file_exists)
-        for asc_file_path in asc_files_paths)
+        delayed(parse_asc_file)(
+            filepath=asc_file_path,
+            experiments=experiments,
+            columns=columns,
+            exclude_screens=exclude_screens,
+            check_file_exists=check_file_exists,
+        )
+        for asc_file_path in asc_files_paths
+    )
 
     # parse files sequentially
     # for asc_file_path in asc_files_paths:
@@ -93,6 +94,5 @@ def main():
     logging.info(f'Took {datetime.now() - start_time}')
 
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     raise SystemExit(main())
