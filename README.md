@@ -1,7 +1,9 @@
 # EMTeC: Eye movements on Machine-generated Texts Corpus
 
-* link to OSF
-* link to preprint
+* The preprint **EMTeC: Eye movements on Machine-generated Texts Corpus** is available on TODO
+* The eye-tracking data is available on [OSF](https://osf.io/ajqze/)
+* The tensors are available on [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/GCU0W8&version=DRAFT)
+
 
 This repository contains the code base used to create the experimental stimuli in EMTeC. It's for reproducibility. 
 The entire dataset can be downloaded from OSF.
