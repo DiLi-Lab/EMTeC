@@ -1,5 +1,5 @@
 torch==2.0.1
-transformers
+transformers==4.29.0
 numpy>=1.23.4
 pandas>=2.0.1
 requests==2.30.0
