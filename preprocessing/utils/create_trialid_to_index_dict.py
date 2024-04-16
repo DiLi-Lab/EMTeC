@@ -14,7 +14,6 @@ import pickle
 from preprocessing.utils.loading import load_config
 
 
-
 def main():
 
     config = load_config()

@@ -1,5 +1,5 @@
 ### TODO maybe not needed (results_base_path)
-results_base_path: './data/{dec_folder}/results'
+#results_base_path: './data/{dec_folder}/results'
 eyetracking_event_path: './data/{dec_folder}/'
 
 edf2asc: {

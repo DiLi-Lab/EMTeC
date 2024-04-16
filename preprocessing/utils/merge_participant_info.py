@@ -11,8 +11,6 @@ import pandas as pd
 from preprocessing.utils.loading import load_config
 
 
-
-
 def main():
 
     config = load_config()
@@ -20,10 +18,8 @@ def main():
     exclude_subjects = config['exclude']['subjects']
     exclude_screens = config['exclude']['screens']
 
-
     questions_dfs = list()
     demographics_dfs = list()
-
 
     path_to_subjects = glob.glob(os.path.join('data', 'subject_level_data', '*'))
     for path_to_subject in path_to_subjects:
@@ -59,7 +55,6 @@ def main():
 
     all_questions.to_csv(os.path.join(out_path, 'participant_results.csv'), sep='\t', index=False)
     all_demographics.to_csv(os.path.join(out_path, 'participant_info.csv'), sep='\t', index=False)
-
 
 
 if __name__ == '__main__':

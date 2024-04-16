@@ -55,7 +55,6 @@ def main():
                 'word': list(),
             }
 
-
             x_left, x_right, y_top, y_bottom = 0, 0, 0, 0
             start_idx, end_idx = 0, 0
             for word_idx, word in enumerate(gen_seq_trunc_str.split()):

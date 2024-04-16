@@ -33,15 +33,18 @@ def get_parser() -> ArgumentParser:
     return parser
 
 
-def compute_fixations(
+def compute_reading_measures(
         fixations_df: pd.DataFrame,
         aoi_df: pd.DataFrame,
         corrected: Optional[bool] = None,
-        # path_to_subj: str,
-        # fix_dir: str,
-        # rm_filename: str,
-):
-
+) -> pd.DataFrame:
+    """
+    Computes reading measures from fixation sequences.
+    :param fixations_df: pandas dataframe with columns 'index', 'event_duration', 'word_roi_id', 'word_roi_str'
+    :param aoi_df: pandas dataframe with columns 'word_index', 'word', and the aois of each word
+    :param corrected: whether or not we are looking at the corrected fixations
+    :return: pandas dataframe with reading measures
+    """
 
     # make sure fixations are actually sorted by their index
     fixations_df = fixations_df.sort_values(by=['index'])
@@ -93,8 +96,6 @@ def compute_fixations(
 
     for index, fixation in fixations_df.iterrows():
 
-
-
         # if aoi is not a number (i.e., it is coded as a missing value using '.'), continue
         try:
             aoi = int(fixation['word_roi_id'])
@@ -105,7 +106,6 @@ def compute_fixations(
         if corrected and fixation['word_roi_str'] == '.':
             continue
 
-
         # update variables
         last_fix_word_idx = cur_fix_word_idx
 
@@ -115,23 +115,19 @@ def compute_fixations(
         next_fix_word_idx = aoi
         next_fix_dur = fixation['event_duration']
 
-        # TODO that is the 0 that we added as dummy fixation at the end of the fixations df, right?
+        # the 0 that we added as dummy fixation at the end of the fixations df
         if next_fix_dur == 0:
             # we set the idx to the idx of the actual last fixation such taht there is no error later
             next_fix_word_idx = cur_fix_word_idx
 
-        try:
-            if right_most_word < cur_fix_word_idx:
-                right_most_word = cur_fix_word_idx
-        except:
-            breakpoint()
+        if right_most_word < cur_fix_word_idx:
+            right_most_word = cur_fix_word_idx
+
         if cur_fix_word_idx == -1:
             continue
 
-        try:
-            word_dict[cur_fix_word_idx]['TFT'] += int(cur_fix_dur)
-        except:
-            breakpoint()
+        word_dict[cur_fix_word_idx]['TFT'] += int(cur_fix_dur)
+
         word_dict[cur_fix_word_idx]['TFC'] += 1
 
         if word_dict[cur_fix_word_idx]['FD'] == 0:
@@ -182,12 +178,6 @@ def compute_fixations(
     return rm_df
 
 
-
-
-
-
-
-
 def main():
 
     args = get_parser().parse_args()
@@ -210,8 +200,6 @@ def main():
             if not fix_file.endswith('csv'):
                 continue
 
-
-
             fixations_df = pd.read_csv(fix_file, delimiter='\t')
             TRIAL_ID = fixations_df['TRIAL_ID'].unique().item()
             item_id = fixations_df['item_id'].unique().item()
@@ -221,8 +209,6 @@ def main():
 
             aoi_filename = f'trialid{TRIAL_ID}_{item_id}_trialindex{Trial_Index_}_coordinates.csv'
             aoi_df = pd.read_csv(os.path.join(path_to_subj, 'aoi', aoi_filename), delimiter='\t')
-
-
 
             if args.corrected:
                 save_basepath = os.path.join(path_to_subj, 'reading_measures_corrected')
@@ -247,7 +233,7 @@ def main():
             else:
                 corrected = False
 
-            rm_df = compute_fixations(
+            rm_df = compute_reading_measures(
                 fixations_df=fixations_df,
                 aoi_df=aoi_df,
                 corrected=corrected,
@@ -260,14 +246,7 @@ def main():
             rm_df['model'] = model
             rm_df['decoding_strategy'] = decoding_strategy
 
-
             rm_df.to_csv(path_save_rm_file, index=False)
-
-
-
-
-
-
 
 
 if __name__ == '__main__':

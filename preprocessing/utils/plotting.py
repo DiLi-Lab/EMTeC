@@ -58,36 +58,6 @@ def plot_px_over_time(
     plt.close()
 
 
-# def plot_ampl_over_vel(
-#     subj_id: str,
-#     event_dir: str,
-#     saccade_info,
-#     sampling: int,
-#     TRIAL_ID: int,
-#     item_id: str,
-#     Trial_Index_: int,
-#     model: str,
-#     decoding_strategy: str,
-# ):
-#     plot_filename = f'{subj_id}_trialid{TRIAL_ID}_{item_id}_trialindex{Trial_Index_}_{model}_{decoding_strategy}_ampl_vel.png'
-#     plot_savepath = os.path.join(event_dir, 'plots', 'ampl_vel')
-#     if not os.path.exists(plot_savepath):
-#         os.makedirs(plot_savepath)
-#
-#     duration = saccade_info[:, 1] - saccade_info[:, 0]
-#     duration = duration / (sampling / 1000)  # sampling freq 2000: if we look at e.g. 40 samples, divide by 2 to get 20ms
-#     amplitude = np.sqrt(saccade_info[:, 5] ** 2 + saccade_info[:, 6] ** 2)
-#     peak_velocity = saccade_info[:, 2]
-#
-#     # plot the main sequence
-#     plt.plot(amplitude, peak_velocity, 'o')
-#     plt.xlabel('amplitude')
-#     plt.ylabel('peak velocity')
-#
-#     plt.savefig(os.path.join(plot_savepath, plot_filename))
-#     plt.close()
-
-
 def plot_ampl_over_vel(
         event_dat: pd.DataFrame,
         sampling: int,

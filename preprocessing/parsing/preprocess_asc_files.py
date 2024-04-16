@@ -7,6 +7,7 @@ Script that reads through the ascii files, extracts the relevant information and
 
 import logging
 import os
+import glob
 
 from datetime import datetime
 from joblib import Parallel, delayed
@@ -18,21 +19,20 @@ import numpy as np
 from preprocessing.utils.loading import load_config
 from preprocessing.parsing.parse_asc import parse_asc_file
 
-import glob
-
 
 logging.basicConfig(format='%(levelname)s::%(message)s',
                     level=logging.INFO)
 
 
-
-def process_asc_to_csv(path_to_data: str,
-                       experiments: List[str],
-                       columns: Union[str, Dict[str, str]],
-                       exclude_subjects: List[str],
-                       exclude_screens: Dict[str, List[int]],
-                       n_jobs: int = 1,
-                       check_file_exists: bool = True):
+def process_asc_to_csv(
+        path_to_data: str,
+        experiments: List[str],
+        columns: Union[str, Dict[str, str]],
+        exclude_subjects: List[str],
+        exclude_screens: Dict[str, List[int]],
+        n_jobs: int = 1,
+        check_file_exists: bool = True,
+):
 
     subj_dirs = glob.glob(os.path.join(path_to_data, '*'))
 
@@ -43,9 +43,6 @@ def process_asc_to_csv(path_to_data: str,
         if f'{subj_dir.split("/")[-1]}' not in exclude_subjects
     ]
 
-    # filenames = [filename for filename in os.listdir(path_asc_files)
-    #              if os.path.splitext(filename)[1] == '.asc']
-    # filenames.sort()
     logging.info(f'Input files ({len(asc_files_paths)}): {asc_files_paths}')
 
     # parse files in parallel

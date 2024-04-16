@@ -7,9 +7,10 @@ Merge the subject-trial-level reading measure files into one big file.
 
 import os
 import glob
-from argparse import ArgumentParser
+
 import pandas as pd
 import numpy as np
+from argparse import ArgumentParser
 
 from preprocessing.utils.loading import load_config
 
@@ -30,7 +31,6 @@ def main():
     exclude_subjects = config['exclude']['subjects']
 
     rms_dfs = list()
-
 
     path_to_subjects = glob.glob(os.path.join('data', 'subject_level_data', '*'))
     for path_to_subject in path_to_subjects:

@@ -1,7 +1,9 @@
+#!/usr/bin/env python
 """
 Script to merge the model outputs and select only those outputs that will be used as stimuli in the eye-tracking
 experiment.
 """
+
 import os
 import numpy as np
 import pandas as pd
@@ -16,7 +18,7 @@ def add_to_dict(
         model: str,
         prompts_introductory_screens_items: pd.DataFrame,
         orig_columns: List[str],
-):
+) -> pd.DataFrame:
     assert model in path
     files = os.listdir(path)
     for file in files:
@@ -128,7 +130,6 @@ def main():
 
     stimuli_df = pd.DataFrame(stimuli_dict)
 
-
     # add the comprehension questions to the data frame
     questions_df = pd.read_csv('stimuli_selection/util_files/stimuli_and_questions_balanced.csv')
     stimuli_and_questions_df = add_questions(
@@ -141,10 +142,6 @@ def main():
         os.makedirs(out_path)
 
     stimuli_and_questions_df.to_csv(os.path.join(out_path, 'stimuli.csv'), index=False, sep='\t')
-
-
-
-
 
 
 if __name__ == '__main__':

@@ -8,9 +8,10 @@ Merge the subject-trial-level fixation sequence files into one big file.
 
 import os
 import glob
-from argparse import ArgumentParser
+
 import pandas as pd
 import numpy as np
+from argparse import ArgumentParser
 
 from preprocessing.utils.loading import load_config
 
@@ -32,7 +33,6 @@ def main():
     exclude_subjects = config['exclude']['subjects']
 
     fixations_dfs = list()
-
 
     path_to_subjects = glob.glob(os.path.join('data', 'subject_level_data', '*'))
     for path_to_subject in path_to_subjects:
@@ -64,7 +64,6 @@ def main():
 
     # remove unnecessary columns
     all_fixs = all_fixs.drop(columns=['Trial_Index_', 'event', 'event_len', 'fix_mean_x', 'fix_mean_y', 't_end', 't_start',])
-
 
     # change the order of columns
     columns = ['subject_id', 'item_id', 'model', 'decoding_strategy', 'TRIAL_ID', 'fixation_index', 'fixation_duration', 'word_id', 'word']
