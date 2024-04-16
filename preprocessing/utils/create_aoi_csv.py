@@ -17,7 +17,7 @@ from argparse import ArgumentParser
 def main():
 
     # read in the stimuli
-    stimuli = pd.read_csv('stimuli_selection/files/stimuli_and_questions.tsv', sep='\t')
+    stimuli = pd.read_csv('data/stimuli.csv', sep='\t')
 
     paths_to_subjects = glob.glob(os.path.join('data', 'subject_level_data', '*'))
 

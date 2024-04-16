@@ -535,10 +535,6 @@ def readfile_event(
             subj_id=subj_id,
             event_dir=event_dir,
             item_id=item_id,
-            Trial_Index_=Trial_Index_,
-            TRIAL_ID=TRIAL_ID,
-            model=model,
-            decoding_strategy=decoding_strategy,
         )
 
         logging.info(f'writing to {filepath}')
