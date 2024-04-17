@@ -11,12 +11,16 @@ edf2asc: {
 }
 
 exclude: {
-             subjects: ['ET_19', 'ET_36', 'ET_40', 'ET_40_1', 'ET_43', 'ET_45', 'ET_60', 'ET_79'],   # exclude entire subjects
+             subjects: ['ET_19', 'ET_36', 'ET_40', 'ET_40_1', 'ET_43', 'ET_45', 'ET_47', 'ET_60', 'ET_79', 'ET_99'],   # exclude entire subjects
              screens: {
-                          ET_13: [35,],
-                          ET_18: [24,],    # from specified subjects, exclude screens
-                          ET_22: [3,],
-                          ET_31: [42,],
+                         ET_11: [ 28, ],
+                         ET_13: [ 35, ],
+                         ET_18: [ 24, ],    # from specified subjects, exclude screens
+                         ET_22: [ 3, ],
+                         ET_31: [ 42, ],
+                         ET_69: [ 8, ],
+                         ET_49: [ 24, ],
+                         ET_86: [ 8, ],
              }
 }
 
