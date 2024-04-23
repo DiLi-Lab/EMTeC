@@ -6,7 +6,7 @@ python -m annotation.create_aoi_csvs
 
 # Assign arguments to variables
 INPUT_FILE="data/stimuli.csv"
-AOI_DIRECTORY="annotation/unique_aois"
+AOI_DIRECTORY="data/unique_aois"
 OUTPUT_FILE="annotation/word_level_annotations.csv"
 shift 3  # Shift the first three arguments to get model names
 MODELS=("$@")
