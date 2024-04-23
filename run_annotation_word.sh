@@ -1,12 +1,8 @@
 #!/bin/bash
 set -x
 
-## Check if the minimum number of arguments are passed
-#if [ "$#" -lt 4 ]; then
-#    #echo "Usage: $0 <input_file> <aoi_directory> <output_file> [model1 model2 ... modelN]"
-#    echo "Usage: $0 <input_file> <aoi_directory> <output_file> [model1 model2 ... modelN]"
-#    exit 1
-#fi
+echo "Creating unique aoi csv files ..."
+python -m annotation.create_aoi_csvs
 
 # Assign arguments to variables
 INPUT_FILE="data/stimuli.csv"
