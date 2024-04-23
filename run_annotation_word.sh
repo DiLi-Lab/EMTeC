@@ -1,6 +1,7 @@
 #!/bin/bash
 set -x
 
+# create the files with AOIs for each combination of model/decoding strategy/item id
 echo "Creating unique aoi csv files ..."
 python -m annotation.create_aoi_csvs
 
@@ -46,7 +47,7 @@ fi
 echo "Running surprisal analysis for each model..."
 for MODEL in "${MODELS[@]}"; do
     echo "Processing with model: $MODEL"
-    python -m "$SURPRISAL_SCRIPT" "$TEMP_OUTPUT" "$OUTPUT_FILE" "$MODEL"
+    CUDA_VISIBLE_DEVICES=5,6,7 python -m "$SURPRISAL_SCRIPT" "$TEMP_OUTPUT" "$OUTPUT_FILE" "$MODEL"
 done
 
 # Check if the surprisal script ran successfully and output file was created
