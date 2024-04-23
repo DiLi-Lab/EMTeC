@@ -23,16 +23,11 @@ def main():
         os.makedirs(save_path)
 
     stimuli = pd.read_csv('data/stimuli.csv', sep='\t')
-
     subject_ids = glob.glob(os.path.join('data', 'subject_level_data', '*'))
-    breakpoint()
-
 
     for subject in subject_ids:
         results = pd.read_csv(os.path.join(subject, 'RESULTS_QUESTIONS.txt'), sep='\t')
         path_to_ias_files = os.path.join(subject, 'aoi')
-
-
 
         for trial_id in results['TRIAL_ID'].tolist():
 
@@ -50,8 +45,6 @@ def main():
 
             print(f'--- processing subject {subject}, trial id {trial_id}')
 
-
-
             gen_seq_trunc_str = stimuli[(stimuli['filename'] == filename) & (stimuli['item_id'] == item_id)][
                 'gen_seq_trunc'].tolist()[0]
 
@@ -67,7 +60,6 @@ def main():
                 'x_right': list(),
                 'word': list(),
             }
-
 
             x_left, x_right, y_top, y_bottom = 0, 0, 0, 0
             start_idx, end_idx = 0, 0
@@ -93,7 +85,6 @@ def main():
             aoi_df = pd.DataFrame.from_dict(aoi_dict)
 
             aoi_df.to_csv(os.path.join(save_path, aoi_df_filename), index=False, sep='\t')
-
 
 
 if __name__ == '__main__':
