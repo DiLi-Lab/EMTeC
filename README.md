@@ -400,3 +400,4 @@ as I had to adjust the minimum number of words. This annotation will directly ad
 
 * create unique aois: will create dir in data dir
 * **TODO** comment on that CUDA is necessary
+* annotation/word_level_annotations.csv
