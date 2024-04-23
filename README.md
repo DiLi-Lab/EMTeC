@@ -55,6 +55,8 @@ python get_tensors.py
 
 In order to prompt Phi-2, Mistral and WizardLM, you can run the bash script
 
+* **TODO** comment on that CUDA is necessary
+
 ```bash
 bash run_generation.sh 
 ```
@@ -394,3 +396,7 @@ The package `readability_local` is a local copy of `py-readability-metrics` (see
 as I had to adjust the minimum number of words. This annotation will directly add the readability metrics to the `stimuli.csv` file.
 
 ### Annotation on word-level
+
+
+* create unique aois: will create dir in data dir
+* **TODO** comment on that CUDA is necessary
