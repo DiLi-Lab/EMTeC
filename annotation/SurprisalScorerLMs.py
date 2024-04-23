@@ -5,16 +5,80 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 class SurprisalScorer:
     def __init__(self, model_name="gpt2"):
-        self.name = model_name
-        self.model = self.load_model() 
-        self.tokenizer = AutoTokenizer.from_pretrained(self.name)
-        self.STRIDE = 256  
-        self.MAX_LENGTH = 1024  
 
-    def load_model(self):
-        model = AutoModelForCausalLM.from_pretrained(self.name)
-        model.eval() 
-        return model
+        self.STRIDE = 256
+        self.MAX_LENGTH = 1024
+
+        self.name = model_name
+
+        # load model and tokenizer
+        if self.name == 'mistral':
+            self.tokenizer = AutoTokenizer.from_pretrained('mistralai/Mistral-7B-Instruct-v0.1')
+            self.model = AutoModelForCausalLM.from_pretrained(
+                'mistralai/Mistral-7B-Instruct-v0.1',
+                device_map='auto',
+            )
+        elif self.name == 'phi2':
+            self.tokenizer = AutoTokenizer.from_pretrained('microsoft/phi-2')
+            self.model = AutoModelForCausalLM.from_pretrained(
+                'microsoft/phi-2',
+                device_map='auto',
+                trust_remote_code=True,
+                torch_dtype='auto',
+            )
+        elif self.name == 'llama2-7b':
+            self.tokenizer = AutoTokenizer.from_pretrained('/srv/scratch3/llm/Llama-2-7b-hf')
+            self.model = AutoModelForCausalLM.from_pretrained(
+                '/srv/scratch3/llm/Llama-2-7b-hf',
+                device_map='auto',
+            )
+        elif self.name == 'llama2-13b':
+            self.tokenizer = AutoTokenizer.from_pretrained('/srv/scratch3/llm/Llama-2-13b-hf')
+            self.model = AutoModelForCausalLM.from_pretrained(
+                '/srv/scratch3/llm/Llama-2-13b-hf',
+                device_map='auto',
+            )
+        elif self.name == 'gpt2':
+            self.tokenizer = AutoTokenizer.from_pretrained('gpt2')
+            self.model = AutoModelForCausalLM.from_pretrained(
+                'gpt2',
+                device_map='auto',
+            )
+        elif self.name == 'gpt2-large':
+            self.tokenizer = AutoTokenizer.from_pretrained('gpt2-large')
+            self.model = AutoModelForCausalLM.from_pretrained(
+                'gpt2-large',
+                device_map='auto',
+            )
+        elif self.name == 'opt-350m':
+            self.tokenizer = AutoTokenizer.from_pretrained('facebook/opt-350m')
+            self.model = AutoModelForCausalLM.from_pretrained(
+                'facebook/opt-350m',
+                device_map='auto',
+            )
+        elif self.name == 'opt-1.3b':
+            self.tokenizer = AutoTokenizer.from_pretrained('facebook/opt-1.3b')
+            self.model = AutoModelForCausalLM.from_pretrained(
+                'facebook/opt-1.3b',
+                device_map='auto',
+            )
+        elif self.name == 'pythia-6.9b':
+            self.tokenizer = AutoTokenizer.from_pretrained('EleutherAI/pythia-6.9b')
+            self.model = AutoModelForCausalLM.from_pretrained(
+                'EleutherAI/pythia-6.9b',
+                device_map='auto',
+            )
+        elif self.name == 'pythia-12b':
+            self.tokenizer = AutoTokenizer.from_pretrained('EleutherAI/pythia-12b')
+            self.model = AutoModelForCausalLM.from_pretrained(
+                'EleutherAI/pythia-12b',
+                device_map='auto',
+            )
+        else:
+            raise NotImplementedError(f'Surprisal extraction for model {self.name} is not implemented.')
+
+        self.model.eval()
+
 
     def add_subword_metrics(self, offset, probs, sent, words):
         prob_list = [1.0] * len(words)  # Initialize probabilities for each word as 1 (100%)
