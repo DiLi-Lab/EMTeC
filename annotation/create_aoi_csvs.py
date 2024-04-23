@@ -18,7 +18,7 @@ import pickle
 
 def main():
 
-    save_path = os.path.join('annotation', 'unique_aois')
+    save_path = os.path.join('data', 'unique_aois')
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
