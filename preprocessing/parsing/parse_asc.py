@@ -98,6 +98,10 @@ def parse_asc_file(
 
             elif mp.trial_index.match(line):
                 Trial_Index_ = int(line.split()[-1]) + 1
+                # hardcode special use case where the MSGs for ET_62 were written in the middle of the recording
+                # text block
+                if subject_id == 'ET_62' and Trial_Index_ == 43:
+                    select = False
 
             elif mp.item_id.match(line):
                 item_id = line.split()[-1]
