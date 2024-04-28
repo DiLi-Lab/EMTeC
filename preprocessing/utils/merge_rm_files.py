@@ -41,6 +41,9 @@ def main():
             paths_to_rms = glob.glob(os.path.join(path_to_subject, 'reading_measures_corrected', '*'))
         else:
             paths_to_rms = glob.glob(os.path.join(path_to_subject, 'reading_measures', '*'))
+
+        paths_to_rms = [file for file in paths_to_rms if file.endswith('.csv')]
+
         for path_to_rms in paths_to_rms:
             print(f'--- merging {path_to_rms}')
             rm_df = pd.read_csv(path_to_rms)

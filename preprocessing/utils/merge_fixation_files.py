@@ -45,6 +45,8 @@ def main():
         else:
             paths_to_fixs = glob.glob(os.path.join(path_to_subject, 'fixations', 'event_files', '*'))
 
+        paths_to_fixs = [file for file in paths_to_fixs if file.endswith('.csv')]
+
         for path_to_fix in paths_to_fixs:
             print(f'--- merging {path_to_fix}')
             fix_df = pd.read_csv(path_to_fix, delimiter='\t')
