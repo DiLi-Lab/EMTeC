@@ -16,14 +16,8 @@ class Annotations:
 
     def enhance_annotations(self):
         enhanced_data = []
-        processed_groups = set()
 
         for _, row in self.data.iterrows():
-            identifier = (row['item_id'], row['model'], row['decoding_strategy'], row['list'])
-            if identifier in processed_groups:
-                continue
-            processed_groups.add(identifier)
-
             item_aoi = self.aoi_data[
                 (self.aoi_data['item_id'] == row['item_id']) &
                 (self.aoi_data['model'] == row['model']) &
@@ -33,19 +27,23 @@ class Annotations:
             text = " ".join(item_aoi['word'].tolist())
             doc = nlp(text)
             tokens = [(token.text, token) for token in doc]
+
             word_data = []
             original_words = text.split()
             original_index = 0
             i = 0
 
             while i < len(tokens) and original_index < len(original_words):
-                current_word, annotations = tokens[i][0], [tokens[i][1]]
+                current_word = tokens[i][0]
+                annotations = [tokens[i][1]]
                 current_y_top = item_aoi.iloc[i]['y_top'] if i < len(item_aoi) else None
 
-                while current_word != original_words[original_index] and i < len(tokens) - 1:
+                # Concatenate tokens until the joined string matches the current original word
+                while (current_word != original_words[original_index] and i < len(tokens) - 1):
                     i += 1
                     current_word += tokens[i][0]
                     annotations.append(tokens[i][1])
+
                 # Determine if it's the last in line based on y_top change or document end
                 last_in_line = 0
                 if i < len(tokens) - 1:
@@ -65,8 +63,8 @@ class Annotations:
                         'list': row['list'],
                         'word_index': original_index,
                         'word': current_word,
-                        'POS': ', '.join([ann.pos_ for ann in annotations]),  # Change here
-                        'dependency_tag': ', '.join([ann.dep_ for ann in annotations]),  # And here
+                        'POS': annotations[0].pos_ if len(annotations) == 1 else [ann.pos_ for ann in annotations],
+                        'dependency_tag': annotations[0].dep_ if len(annotations) == 1 else [ann.dep_ for ann in annotations],
                         'n_dep_left': sum(len(list(ann.lefts)) for ann in annotations),
                         'n_dep_right': sum(len(list(ann.rights)) for ann in annotations),
                         'distance_to_head': sum(abs(ann.i - ann.head.i) for ann in annotations),
@@ -92,6 +90,18 @@ class Annotations:
         print(f"Saved enhanced annotations to: {output_file}")
 
 def calculate_wordfreq(annotated_df):
+    """
+    Calculate word frequency and Zipf frequency for each word in the annotated data.
+    The word frequency is derived from the `wordfreq` library. wordfreq uses parameter "best" by default; it uses "large" for the languages where "large" is available.
+    The 'large' lists cover words that appear at least once per 100 million words and are used by default if available.
+    The Zipf frequency scale provides a logarithmic measure of word occurrence per billion words, facilitating comparison across common and rare terms.
+
+    Parameters:
+    annotated_df (pd.DataFrame): Dataframe containing the text data with a 'word' column.
+
+    Returns:
+    pd.DataFrame: The input dataframe with added columns for word frequency and Zipf frequency.
+    """
     # Calculate word and Zipf frequencies
     annotated_df['word_freq'] = annotated_df['word'].apply(lambda w: word_frequency(w, 'en'))
     annotated_df['zipf_freq'] = annotated_df['word'].apply(lambda w: zipf_frequency(w, 'en'))
@@ -125,21 +135,6 @@ def main(input_file, aoi_directory, output_file):
     aoi_data = pd.concat(aoi_data_list, ignore_index=True)
     annotations = Annotations(data, aoi_data)
     annotated_df = annotations.enhance_annotations()
-
-    # Step 1: Group data by specific columns
-    columns_to_group_by = ['item_id', 'model', 'decoding_strategy', 'list', 'word', 'word_index']
-    grouped_data = annotated_df.groupby(columns_to_group_by).size()
-
-    # Step 2: Identify groups with more than one record
-    duplicates = grouped_data[grouped_data > 1]
-
-    # Step 3: Check and print duplicates
-    if not duplicates.empty:
-        print("Duplicate groups found based on the specified columns:")
-        print(duplicates)
-
-    # Optional: Assert no duplicates (if needed for validation)
-    assert duplicates.empty, "Duplicate entries found based on group criteria."
 
     enriched_annotated_df = calculate_wordfreq(annotated_df)
     annotations.save_to_tsv(enriched_annotated_df, output_file)

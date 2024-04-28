@@ -58,6 +58,6 @@ if [ ! -f "$OUTPUT_FILE" ]; then
 fi
 
 # Cleanup temporary files if everything went well
-#rm "$TEMP_OUTPUT"
+rm "$TEMP_OUTPUT"
 
 echo "Processing completed. Output file generated at $OUTPUT_FILE"
