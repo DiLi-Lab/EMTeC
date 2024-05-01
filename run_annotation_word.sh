@@ -9,12 +9,9 @@ python -m annotation.create_aoi_csvs
 INPUT_FILE="data/stimuli.csv"
 AOI_DIRECTORY="data/unique_aois"
 OUTPUT_FILE="annotation/word_level_annotations.csv"
-#shift 3  # Shift the first three arguments to get model names
 MODELS=("$@")
 
 # Path to the Python scripts
-#SURPRISAL_SCRIPT="/Users/isabellecretton/Desktop/WARFARE/ET_DECODING/annotation/surprisal.py"
-#ANNOTATIONS_SCRIPT="/Users/isabellecretton/Desktop/WARFARE/ET_DECODING/annotation/annotations.py"
 SURPRISAL_SCRIPT="annotation.surprisal"
 ANNOTATIONS_SCRIPT="annotation.annotations"
 
