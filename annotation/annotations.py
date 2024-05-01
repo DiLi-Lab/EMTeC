@@ -63,7 +63,7 @@ class Annotations:
                         'model': row['model'],
                         'decoding_strategy': row['decoding_strategy'],
                         'list': row['list'],
-                        'word_index': original_index,
+                        'word_id': original_index,
                         'word': current_word,
                         'POS': ', '.join([ann.pos_ for ann in annotations]),  # Change here
                         'dependency_tag': ', '.join([ann.dep_ for ann in annotations]),  # And here
