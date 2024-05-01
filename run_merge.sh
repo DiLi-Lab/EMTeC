@@ -11,3 +11,9 @@ python -m preprocessing.utils.merge_fixation_files --corrected
 # the corrected and uncorrected fixations
 python -m preprocessing.utils.merge_rm_files
 python -m preprocessing.utils.merge_rm_files --corrected
+
+# merge the reading measures file with the word-level annotations (frequencies, surprisal values, ...) and the
+# prompt type information
+python -m preprocessing.utils.merge_annotations
+# remove the word-level annotation file
+rm annotation/word_level_annotations.csv
