@@ -55,11 +55,13 @@ python get_tensors.py
 
 In order to prompt Phi-2, Mistral and WizardLM, you can run the bash script
 
-* **TODO** comment on that CUDA is necessary
 
 ```bash
 bash run_generation.sh 
 ```
+
+**Note:** In order to prompt the models, you need GPUs set up with [CUDA](https://developer.nvidia.com/cuda-downloads). 
+
 Beware that the GPUs are hard-coded in the bash script and depending on the kind of GPUs available, please 
 adapt them accordingly. Moreover, running WizardLM with beam search as decoding strategy might result in CUDA OOM Errors 
 for items that have a very long context. In such cases, you might subset the prompting process, as indicated within the 
@@ -324,19 +326,52 @@ done on corrected fixations. If it is omitted, reading measures are computed on 
 ```
 
 
-### Merging scripts
+## Lexical annotation
 
-In order to merge the fixation sequence files and the reading measure files, which are all on a per-subject-per-trial basis, 
+### Annotation on text-level
+
+In order to annotate the stimuli texts with readability scores, please run
+```bash
+bash run_annotation_text.sh
+```
+The package `readability_local` is a local copy of `py-readability-metrics` (see their [Documentation](https://pypi.org/project/py-readability-metrics/) and their [GitHub](https://github.com/cdimascio/py-readability-metrics/tree/master)),
+as I had to adjust the minimum number of words. This annotation will directly add the readability metrics to the `stimuli.csv` file.
+
+### Annotation on word-level
+
+To annotate the stimuli texts on word-level with frequency scores, PoS tags, dependency tags, surprisal values, etc., please run the bash script
+
+```bash
+bash run_annotation_word.sh gpt2 gpt2-large opt-350m opt-1.3b mistral phi2 llama2-7b llama2-13b pythia-6.9 pythia-12b
+```
+This will first create a folder `unique_aois` in the `data` directory, which contains the areas of interest on word-level 
+for each stimulus text (i.e., each condition; item id, model, decoding strategy). First the PoS tags, dependency tags, 
+word length information, and frequency values are added to a temporary file `annotation/temp_annotated_data.csv`. Then 
+the surprisal values are extracted from the language models specified in the bash call and the final annotations are 
+saved in `annotations/word_level_annotations.csv`.
+
+**Note:** In order to prompt the models, you need GPUs set up with [CUDA](https://developer.nvidia.com/cuda-downloads).
+
+
+
+
+### Merging files
+
+In order to merge 
+* the fixation sequences
+* the corrected fixation sequences
+* the reading measures
+* the corrected reading measures
+* the participant information (questionnaire and comprehension question information)
+* the word-level lexical annotation with the reading measures
+* the word-level lexical annotation with the corrected reading measures
+
 please run 
 ```bash
 bash run_merge.sh
 ```
-This merges both the uncorrected and the corrected fixations as well as the corrected reading measures into one single file. 
-If the reading measures have also been computed for the uncorrected fixations, uncomment the corresponding line in the bash script 
-and those files will also be merged.
-Additionally, the participant information from the questionnaire and their responses and accuracies to the comprehension questions 
-are merged into single files.
-The final directory structure looks like the following:
+The word-level annotations are merged directly into the files `data/reading_measures.csv` and `data/reading_measures_corrected.csv`.
+The resulting folder structure will then look like this:
 
 ```
 ├── data
@@ -378,26 +413,11 @@ The final directory structure looks like the following:
     │   │   ├── RESULTS_QUESTIONNAIRE.txt
     │   │   ├── RESULTS_QUESTIONS.txt
     │   └── ...
+    ├── unique_aois
     ├── fixations.csv
     ├── fixations_corrected.csv
+    ├── reading_measures.csv
     ├── reading_measures_corrected.csv
     ├── stimuli.csv
 ```
 
-## Lexical annotation
-
-### Annotation on text-level
-
-In order to annotate the texts with readability scores, please run
-```bash
-bash run_annotation_text.sh
-```
-The package `readability_local` is a local copy of `py-readability-metrics` (see their [Documentation](https://pypi.org/project/py-readability-metrics/) and their [GitHub](https://github.com/cdimascio/py-readability-metrics/tree/master)),
-as I had to adjust the minimum number of words. This annotation will directly add the readability metrics to the `stimuli.csv` file.
-
-### Annotation on word-level
-
-
-* create unique aois: will create dir in data dir
-* **TODO** comment on that CUDA is necessary
-* annotation/word_level_annotations.csv
