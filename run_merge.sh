@@ -1,4 +1,5 @@
 #!/bin/sh
+set -euxo pipefail
 
 # merge participant information
 python -m preprocessing.utils.merge_participant_info
@@ -17,3 +18,4 @@ python -m preprocessing.utils.merge_rm_files --corrected
 python -m preprocessing.utils.merge_annotations
 # remove the word-level annotation file
 rm annotation/word_level_annotations.csv
+

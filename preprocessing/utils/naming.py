@@ -12,7 +12,7 @@ def create_filepath_for_event_file(
         subj_id: str,
         event_dir: str,
         item_id: str,
-):
+) -> str:
     filename = f'{subj_id}-{item_id}-fixations.csv'
     filepath = os.path.join(event_dir, 'event_files')
     if not os.path.exists(filepath):

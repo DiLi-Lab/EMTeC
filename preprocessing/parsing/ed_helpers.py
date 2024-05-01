@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """
 Functions for saccade detection.
 """
+from __future__ import annotations
+
+from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
-from typing import Tuple
 
 
 def pix2deg(
-        pix,
-        screenPX,
-        screenCM,
-        distanceCM,
-        adjust_origin=True,
+        pix: Sequence,
+        screenPX: Sequence,
+        screenCM: Sequence,
+        distanceCM: Sequence,
+        adjust_origin: bool = True,
 ):
     """
     Converts pixel screen coordinate to degrees of visual angle
@@ -38,7 +38,7 @@ def pix2deg(
 
 def microsacc(
         velocities: np.array,
-        threshold: Tuple[float, float],
+        threshold: tuple[float, float],
         threshold_factor: float,
         min_duration: int,
         sampling_rate: int,
@@ -103,7 +103,7 @@ def microsacc(
                 s[0] = indx[a]  # saccade onset
                 s[1] = indx[k]  # saccade offset
                 sac.append(s)
-                issac[indx[a] : indx[k] + 1] = 1  # code as saccade from onset to offset
+                issac[indx[a]:indx[k] + 1] = 1  # code as saccade from onset to offset
             a = k + 1  # potential onset of next saccade
             dur = 1  # reset duration
         k = k + 1
@@ -115,7 +115,7 @@ def microsacc(
         s[0] = indx[a]  # saccade onset
         s[1] = indx[k]  # saccade offset
         sac.append(s)
-        issac[indx[a] : indx[k] + 1] = 1  # code as saccade from onset to offset
+        issac[indx[a]:indx[k] + 1] = 1  # code as saccade from onset to offset
     sac = np.array(sac)
 
     if nsac > 0:
@@ -192,11 +192,11 @@ def estimate_threshold(
 
 
 def issac(
-    velocities,
-    threshold_factor=6,
-    min_duration=6,
-    sampling_rate=1000,
-    threshold=(10, 10),
+        velocities: np.ndarray,
+        threshold_factor: float | int = 6,
+        min_duration: float | int = 6,
+        sampling_rate: float | int = 1000,
+        threshold: tuple[int, int] = (10, 10),
 ):
     """
     Detect whether each velocity value corresponds to a microsaccade.
@@ -245,27 +245,25 @@ def issac(
         else:  # wenn nicht (mehr) in saccade
             # Minimum duration criterion (exception: last saccade)
             if dur >= min_duration:  # schreibe saccade, sofern MINDUR erreicht wurde
-                is_sac[
-                    indx[a] : indx[k] + 1
-                ] = 1  # code as saccade from onset to offset
+                is_sac[indx[a]:indx[k] + 1] = 1  # code as saccade from onset to offset
             a = k + 1  # potential onset of next saccade
             dur = 1  # reset duration
         k = k + 1
     # Check minimum duration for last microsaccade
     if dur >= min_duration:
-        is_sac[indx[a] : indx[k] + 1] = 1  # code as saccade from onset to offset
+        is_sac[indx[a]:indx[k] + 1] = 1  # code as saccade from onset to offset
     return is_sac
 
 
 def corruptSamplesIdx(
-        x,
-        y,
-        x_max,
-        y_max,
-        x_min,
-        y_min,
-        theta=0.6,
-        samplingRate=1000,
+        x: Sequence,
+        y: Seqeunce,
+        x_max: float | int,
+        y_max: float | int,
+        x_min: float | int,
+        y_min: float | int,
+        theta: float = 0.6,
+        samplingRate: float | int = 1000,
 ):
     """
     Find samples that are corrupt (e.g. due to blinks) based on velocity threshold.
@@ -302,16 +300,16 @@ def corruptSamplesIdx(
         np.greater(x, x_max)
         | np.greater(y, y_max)
         | np.greater(x_min, x)
-        | np.greater(y_min, y)
+        | np.greater(y_min, y),
     )[0]
 
     return np.sort(np.unique(np.concatenate((mis_ix, out_ix, fast_ix))))
 
 
 def vecvel(
-        x,
-        sampling_rate=1000,
-        smooth=True,
+        x: np.ndarray,
+        sampling_rate: float | int = 1000,
+        smooth: bool = True,
 ):
     """
     Compute velocity times series from 2D position data
@@ -399,4 +397,3 @@ def compute_peak_velocity_and_amplitude(
         amplitudes.append(ampl)
 
     return peak_velocities, amplitudes
-

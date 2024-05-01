@@ -1,23 +1,25 @@
 """
 
 """
-
-import os
-import os.path
-import json
-import string
-import datetime
+from __future__ import annotations
 
 import argparse
+import datetime
+import json
+import os.path
+import string
 from argparse import ArgumentParser
+from typing import Any
 
-from typing import Dict, List, Any, Optional, Tuple, Union
-
-import torch
 import numpy as np
 import pandas as pd
+import torch
 import transformers
-from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig, set_seed, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM
+from transformers import AutoTokenizer
+from transformers import BitsAndBytesConfig
+from transformers import GenerationConfig
+from transformers import set_seed
 
 
 
@@ -424,8 +426,10 @@ def generate_texts(
                     else:
                         continue
                 else:
-                    if (word_ids_list_wo_nl[idx] != word_ids_list_wo_nl[idx - 1]
-                            and word_ids_list_wo_nl[idx] != word_ids_list_wo_nl[idx + 1]):
+                    if (
+                        word_ids_list_wo_nl[idx] != word_ids_list_wo_nl[idx - 1]
+                        and word_ids_list_wo_nl[idx] != word_ids_list_wo_nl[idx + 1]
+                    ):
                         tok_idx_trunc_wo_nl_wo_punct.append(tok_idx_trunc_wo_nl[idx])
                         word_ids_list_wo_nl_wo_punct.append(word_ids_list_wo_nl[idx])
                         gen_toks_trunc_wo_nl_wo_punct.append(gen_toks_trunc_wo_nl[idx])

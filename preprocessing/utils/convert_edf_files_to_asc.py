@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import annotations
 
 import concurrent.futures
 import logging
@@ -6,7 +7,6 @@ import stat
 import subprocess
 import os
 
-from typing import List
 from tqdm import tqdm
 from argparse import ArgumentParser
 
@@ -26,7 +26,7 @@ def get_parser() -> ArgumentParser:
 def convert_edf_to_asc_file(
         edf_filepath: str,
         asc_filepath: str,
-        exclude_subjects: List[str],
+        exclude_subjects: list[str],
         write_logs: bool = True,
         skip_existing: bool = True,
 ):

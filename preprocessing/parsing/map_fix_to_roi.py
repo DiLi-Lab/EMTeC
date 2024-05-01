@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+from __future__ import annotations
 
 import os
-import numpy as np
+
 import pandas as pd
-from typing import Dict, Collection, List, Tuple
-from os.path import exists
-import pickle
 
 
 # for decoding
 def get_word_rois(
         df_subset: pd.DataFrame,
         aoi_df: pd.DataFrame,
-        #aoi_dict: Dict[Tuple[int], Tuple[str]],
-) -> Tuple[List[str], List[str]]:
+) -> tuple[list[str], list[str]]:
     """
     Assigns a word ROI to each fixation position.
     :param df_subset: pandas dataframe with columns 'fix_mean_x', 'fix_mean_y'
@@ -23,8 +19,8 @@ def get_word_rois(
     """
     xs = df_subset.fix_mean_x.to_numpy(dtype=float)
     ys = df_subset.fix_mean_y.to_numpy(dtype=float)
-    fix_rois: List = ["."] * len(xs)
-    fix_rois_str: List = ["."] * len(xs)
+    fix_rois: list = ['.'] * len(xs)
+    fix_rois_str: list = ['.'] * len(xs)
     assert len(xs) == len(ys)
 
     # for each fixation position
@@ -102,4 +98,3 @@ def get_aois_from_event_data(
     event_dat['word_roi_id'] = word_roi_ids
     event_dat['word_roi_str'] = word_roi_str
     return event_dat
-
