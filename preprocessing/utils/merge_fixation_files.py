@@ -65,10 +65,10 @@ def main():
     )
 
     # remove unnecessary columns
-    all_fixs = all_fixs.drop(columns=['Trial_Index_', 'event', 'event_len', 'fix_mean_x', 'fix_mean_y', 't_end', 't_start',])
+    all_fixs = all_fixs.drop(columns=['Trial_Index_', 'event', 'event_len', 't_end', 't_start',])
 
     # change the order of columns
-    columns = ['subject_id', 'item_id', 'model', 'decoding_strategy', 'TRIAL_ID', 'fixation_index', 'fixation_duration', 'word_id', 'word']
+    columns = ['subject_id', 'item_id', 'model', 'decoding_strategy', 'TRIAL_ID', 'fixation_index', 'fixation_duration', 'fix_mean_x', 'fix_mean_y', 'word_id', 'word']
     all_fixs = all_fixs[columns]
 
     if args.corrected:
