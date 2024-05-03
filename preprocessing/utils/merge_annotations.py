@@ -24,10 +24,10 @@ def main():
 
     # merge the annotations with the reading measures
     print(' --- merging annotations with reading measures')
-    merged = pd.merge(rms, annotations, on=['item_id', 'model', 'decoding_strategy', 'word_id'], how='left')
+    merged = pd.merge(rms, annotations, on=['item_id', 'model', 'decoding_strategy', 'word_id', 'word'], how='left')
     print(' --- merging corrected annotations with corrected reading measures')
     merged_corrected = pd.merge(rms_corrected, annotations,
-                                on=['item_id', 'model', 'decoding_strategy', 'word_id'], how='left')
+                                on=['item_id', 'model', 'decoding_strategy', 'word_id', 'word'], how='left')
 
     # merge the reading measures with the stimulus info type/task/subcategory
     print(' --- merging reading measures with stimulus info')
