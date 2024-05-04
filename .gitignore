@@ -2,6 +2,7 @@
 annotation/word_level_annotations.csv
 data/
 .DS_Store
+analyses/Eyettention/
 
 # Byte-compiled / optimized / DLL util_files
 __pycache__/
