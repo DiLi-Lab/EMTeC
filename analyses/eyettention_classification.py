@@ -18,10 +18,13 @@ from argparse import ArgumentParser
 from analyses.utils.eyettention_model import Eyettention, ClassificationModel
 from torch.utils.data import DataLoader
 import os
+import pickle
 import torch
 import torch.nn as nn
+import numpy as np
 import pandas as pd
 from collections import deque
+from sklearn.metrics import roc_auc_score
 
 
 
@@ -140,6 +143,13 @@ def main():
         'split': args.split,
     }
 
+    # save paths
+    model_save_basepath = '/srv/scratch1/bolliger/EMTeC/analyses/eyettention_classification'
+    model_name = f'{args.eyettention_output}-{args.classification_input}-{args.loss}-{args.task}-{args.target}-{args.split}'
+    model_savepath = os.path.join(model_save_basepath, model_name)
+    if not os.path.exists(model_savepath):
+        os.makedirs(model_savepath)
+
     # # get a list of subject ids
     # participant_info = pd.read_csv(path_to_participant_info, sep='\t')
     # subject_ids = participant_info['subject_id'].tolist()
@@ -160,18 +170,18 @@ def main():
 
 
     # iterate through the folds for k-fold cross-validation
-    for train_idx, test_idx in get_kfold(
+    for fold_idx, (train_idx, test_idx) in enumerate(get_kfold(
         inputs=data['SN_input_ids'],
         labels=data['ratings_difficulty'],
         split=cf['split'],
         n_splits=cf['n_folds'],
         group=data['subject_ids'],
-    ):
+    )):
         # dict to hold the training progress
         loss_dict = {
             'train_loss': list(),
             'val_loss': list(),
-            'test_ll': list(),
+            'test_mse': list(),
             'test_AUC': list(),
         }
 
@@ -305,7 +315,7 @@ def main():
 
             val_loss = list()
             model.eval()
-            for batch in val_dataloader:
+            for batch_idx, batch in enumerate(val_dataloader):
                 print('--- validation ...')
                 with torch.no_grad():
                     sn_input_ids = batch['sn_input_ids'].to(device)
@@ -328,6 +338,22 @@ def main():
                     sn_word_len = (sn_word_len - sn_word_len_mean) / sn_word_len_std
                     sn_word_len = torch.nan_to_num(sn_word_len)
 
+                    if cf['target'] == 'difficulty':
+                        if cf['task'] == 'classification':
+                            labels = batch['rating_difficulty_one_hot'].to(device)
+                        elif cf['task'] == 'regression':
+                            labels = batch['rating_difficulty'].to(device)
+                        else:
+                            raise NotImplementedError
+                    elif cf['target'] == 'engaging':
+                        if cf['task'] == 'classification':
+                            labels = batch['rating_engaging_one_hot'].to(device)
+                        elif cf['task'] == 'regression':
+                            labels = batch['rating_engaging'].to(device)
+                        else:
+                            raise NotImplementedError
+
+
                     out = model(
                         sn_input_ids=sn_input_ids,
                         sn_attention_mask=sn_attention_mask,
@@ -339,6 +365,7 @@ def main():
                         sn_word_len=sn_word_len,
                         sp_len=sp_len,
                     )
+
                     if args.loss == 'cross-entropy':
                         loss = loss_fn(out, labels.float())
                     elif args.loss == 'ordinal-hinge':
@@ -346,16 +373,108 @@ def main():
                     elif args.loss == 'mse':
                         loss = loss_fn(out.squeeze(), labels.float())
                     val_loss.append(loss.to('cpu').detach().numpy())
+            print('\n---validation loss is {}'.format(np.mean(val_loss)))
+            loss_dict['val_loss'].append(np.mean(val_loss))
 
+            # check if early stopping should be applied
+            if np.mean(val_loss) < old_score:
+                # save model if val loss is smallest
+                torch.save(model.state_dict(), os.path.join(model_savepath, f'model-fold{fold_idx}.pth'))
+                old_score = np.mean(val_loss)
+                print(f'\t\tsaved model state dict')
+                save_ep_counter = epoch
+            else:
+                # early stopping
+                if epoch - save_ep_counter >= cf['earlystop_patience']:
+                    break
 
+        # evaluation
+        # load the model at the best epoch
+        model.load_state_dict(torch.load(os.path.join(model_savepath, f'model-fold{fold_idx}.pth'), map_location='cpu'))
+        model.to(device)
+        model.eval()
+        test_outputs = list()
+        test_labels = list()
+        for batch in test_dataloader:
+            with torch.no_grad():
+                sn_input_ids = batch['sn_input_ids'].to(device)
+                sn_attention_mask = batch['sn_attention_mask'].to(device)
+                word_ids_sn = batch['word_ids_sn'].to(device)
+                sn_word_len = batch['sn_word_len'].to(device)
 
+                sp_input_ids = batch['sp_input_ids'].to(device)
+                sp_attention_mask = batch['sp_attention_mask'].to(device)
+                word_ids_sp = batch['word_ids_sp'].to(device)
+                sp_len = batch['sp_len'].to(device)
 
+                sp_pos = batch['sp_pos'].to(device)
+                sp_fix_dur = (batch['sp_fix_dur'] / 1000).to(device)
 
+                # normalize gaze features
+                mask = ~torch.eq(sp_fix_dur, 0)
+                sp_fix_dur = (sp_fix_dur - fix_dur_mean) / fix_dur_std * mask
+                sp_fix_dur = torch.nan_to_num(sp_fix_dur)
+                sn_word_len = (sn_word_len - sn_word_len_mean) / sn_word_len_std
+                sn_word_len = torch.nan_to_num(sn_word_len)
 
+                if cf['target'] == 'difficulty':
+                    if cf['task'] == 'classification':
+                        labels = batch['rating_difficulty_one_hot'].to(device)
+                    elif cf['task'] == 'regression':
+                        labels = batch['rating_difficulty'].to(device)
+                    else:
+                        raise NotImplementedError
+                elif cf['target'] == 'engaging':
+                    if cf['task'] == 'classification':
+                        labels = batch['rating_engaging_one_hot'].to(device)
+                    elif cf['task'] == 'regression':
+                        labels = batch['rating_engaging'].to(device)
+                    else:
+                        raise NotImplementedError
 
+                out = model(
+                    sn_input_ids=sn_input_ids,
+                    sn_attention_mask=sn_attention_mask,
+                    sp_input_ids=sp_input_ids,
+                    sp_pos=sp_pos,
+                    word_ids_sn=word_ids_sn,
+                    word_ids_sp=word_ids_sp,
+                    sp_fix_dur=sp_fix_dur,
+                    sn_word_len=sn_word_len,
+                    sp_len=sp_len,
+                )
+                test_outputs.append(out.cpu())
+                test_labels.append(labels.cpu())
 
+                if cf['task'] == 'regression':
+                    loss = loss_fn(out.squeeze(), labels.float())
+                    loss_dict['test_mse'].append(loss.item())
 
+        # if we do classification, compute AUC
+        if cf['task'] == 'classification':
 
+            # concatenate all the model outputs such that the resulting tensor is of shape [instances, num_classes]
+            all_test_outputs = torch.cat([t.view(-1, 5) for t in test_outputs], dim=0)
+            # same for the one-hot encoded labels
+            all_test_labels = torch.cat([t.view(-1, 5) for t in test_labels], dim=0)
+            # convert output logits to probabilities
+            probabilities = nn.functional.softmax(all_test_outputs, dim=1).cpu()
+            true_class_index = np.argmax(all_test_labels.cpu(), axis=1)
+            auc_score = roc_auc_score(all_test_labels[:, true_class_index], probabilities[:, true_class_index])
+            loss_dict['test_AUC'].append(auc_score)
+
+        loss_dict['fix_dur_mean'] = fix_dur_mean
+        loss_dict['fix_dur_std'] = fix_dur_std
+        loss_dict['sn_word_len_mean'] = sn_word_len_mean
+        loss_dict['sn_word_len_std'] = sn_word_len_std
+
+        # save results
+        with open(os.path.join(model_savepath, f'model-results-fold{fold_idx}.pickle'), 'wb') as handle:
+            pickle.dump(loss_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    # save config
+    with open(os.path.join(model_savepath, 'config.pickle'), 'wb') as handle:
+        pickle.dump(cf, handle)
 
 
 if __name__ == '__main__':
