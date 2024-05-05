@@ -471,7 +471,7 @@ class ClassificationModel(nn.Module):
             self.dropout_dense,
             nn.Linear(256, 256),
             nn.ReLU(),
-            nn.Linear(256, 5),  # number of output classes = 5
+            nn.Linear(256, cf['n_targets']),  # number of output classes = 5
         )
 
     def forward(
