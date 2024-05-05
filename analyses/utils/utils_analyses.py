@@ -13,6 +13,8 @@ from torch.utils.data import Dataset
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
+from sklearn.model_selection import KFold, GroupKFold, train_test_split
+from typing import Optional, Dict, Any
 
 
 def compute_word_length(arr):
@@ -79,10 +81,17 @@ def prepare_eyettention_input(
         group['RATING_ENGAGING_VALUE_zscore'] = zscore(group['RATING_ENGAGING_VALUE'])
         ratings_dfs[name] = group
 
+    # TODO remove break index and break statements below
+    break_idx = 200
+
     # save all rating values in lists
     ratings_difficulty, ratings_difficulty_zscore = list(), list()
     ratings_engaging, ratings_engaging_zscore = list(), list()
-    for fix_df in fixations_dfs:
+    for fix_df_idx, fix_df in enumerate(fixations_dfs):
+
+        if fix_df_idx == break_idx:
+            break
+
         subject_id = fix_df['subject_id'].unique().item()
         item_id = fix_df['item_id'].unique().item()
         difficulty = ratings_dfs[subject_id].loc[
@@ -108,6 +117,8 @@ def prepare_eyettention_input(
     SP_landing_pos = list()
     SP_len = list()
 
+    subject_ids = list()
+
     # temp_max_sn_len, temp_max_sn_token = 0, 0
     # temp_max_sp_len, temp_max_sp_token = 0, 0
     # all_sn_lens, all_sn_tokens = list(), list()
@@ -115,7 +126,7 @@ def prepare_eyettention_input(
 
     for fix_df_idx, fix_df in enumerate(fixations_dfs):
 
-        if fix_df_idx == 30:
+        if fix_df_idx == break_idx:
             break
 
         print(f'--- preparing scanpath {fix_df_idx + 1}/{len(fixations_dfs)} ---')
@@ -124,6 +135,8 @@ def prepare_eyettention_input(
         model = fix_df['model'].unique().item()
         decoding_strategy = fix_df['decoding_strategy'].unique().item()
         subject_id = fix_df['subject_id'].unique().item()
+
+        subject_ids.append(subject_id)
 
         # locate the corresponding reading measures in the reading measures data frame to get the sentence and word lens
         rms_df = reading_measures.loc[
@@ -281,6 +294,7 @@ def prepare_eyettention_input(
         'ratings_engaging': ratings_engaging,
         'ratings_engaging_one_hot': ratings_engaging_one_hot,
         'ratings_engaging_zscore': ratings_engaging_zscore,
+        'subject_ids': np.array(subject_ids),
     }
 
     return data
@@ -312,6 +326,7 @@ class EMTeCDataset(Dataset):
         sample['rating_engaging'] = self.data['ratings_engaging'][idx]
         sample['rating_engaging_one_hot'] = self.data['ratings_engaging_one_hot'][idx, :]
         sample['rating_engaging_zscore'] = self.data['ratings_engaging_zscore'][idx]
+        sample['subject_id'] = self.data['subject_ids'][idx]
         return sample
 
 
@@ -379,7 +394,6 @@ class OrdinalHingeLoss(nn.Module):
         :return: Ordinal hinge loss (Tensor)
         """
         # compute the differences between predicted logits and thresholds
-        breakpoint()
         diff = predictions.unsqueeze(1) - self.thresholds.unsqueeze(0)
         # compute the hinge loss for each class
         hinge_loss = F.relu(diff * (targets.unsqueeze(1) - torch.arange(self.num_classes).to(self.device).unsqueeze(0)).float())
@@ -388,6 +402,113 @@ class OrdinalHingeLoss(nn.Module):
         # average loss over samples
         return loss.mean()
 
+
+def get_kfold(
+        inputs: torch.Tensor,
+        labels: torch.Tensor,
+        split: str,
+        n_splits: int,
+        group: Optional[np.array] = None,
+):
+    """
+    Returns a k-fold iterator depending on the split type (by subject or random).
+    :param inputs: The inputs to the model
+    :param labels: The labels
+    :param split: Subject or random
+    :param n_splits: How many folds for the k-fold CV
+    :param group: if group k-fold, the group
+    :return: k-fold iterator
+    """
+    if split == 'subject':
+        kfold = GroupKFold(n_splits=n_splits)
+        kfold.get_n_splits(inputs, labels, groups=group)
+        return kfold.split(inputs, labels, groups=group)
+    elif split == 'random':
+        kfold = KFold(n_splits=n_splits, shuffle=True, random_state=0)
+        kfold.get_n_splits(inputs, labels)
+        return kfold.split(inputs, labels)
+    else:
+        raise NotImplementedError(f'The cross-validation split {split} is not implemented.')
+
+
+def subset_data_kfold(
+        data: Dict[str, Any],
+        train_idx: np.array,
+        test_idx: np.array,
+):
+    """
+    Subsets the dataset according to the k-fold cross-validation indices.
+    :param data: The data
+    :param train_idx: the train indices
+    :param test_idx: the test indices
+    :return: Returns the data split into train and test data
+    """
+    train_data, test_data = dict(), dict()
+    for key in data.keys():
+        train_data[key] = data[key][train_idx]
+        test_data[key] = data[key][test_idx]
+    return train_data, test_data
+
+
+def split_train_val(
+        train_data: Dict[str, Any],
+        val_size: float = 0.1,
+):
+    """
+        Split the train data into train and validation data.
+        :param train_data:
+        :param val_size:
+        :return:
+    """
+    SN_input_ids_train, SN_input_ids_test, SN_attention_mask_train, SN_attention_mask_test, SN_WORD_len_train, SN_WORD_len_test, WORD_ids_sn_train, WORD_ids_sn_test, SP_input_ids_train, SP_input_ids_test, SP_attention_mask_train, SP_attention_mask_test, WORD_ids_sp_train, WORD_ids_sp_test, SP_ordinal_pos_train, SP_ordinal_pos_test, SP_fix_dur_train, SP_fix_dur_test, SP_len_train, SP_len_test, ratings_difficulty_train, ratings_difficulty_test, ratings_difficulty_one_hot_train, ratings_difficulty_one_hot_test, ratings_difficulty_zscore_train, ratings_difficulty_zscore_test, ratings_engaging_train, ratings_engaging_test, ratings_engaging_one_hot_train, ratings_engaging_one_hot_test, ratings_engaging_zscore_train, ratings_engaging_zscore_test, subject_ids_train, subject_ids_test = train_test_split(
+        train_data['SN_input_ids'], train_data['SN_attention_mask'], train_data['SN_WORD_len'], train_data['WORD_ids_sn'], train_data['SP_input_ids'], train_data['SP_attention_mask'],
+        train_data['WORD_ids_sp'], train_data['SP_ordinal_pos'], train_data['SP_fix_dur'], train_data['SP_len'], train_data['ratings_difficulty'], train_data['ratings_difficulty_one_hot'],
+        train_data['ratings_difficulty_zscore'], train_data['ratings_engaging'], train_data['ratings_engaging_one_hot'], train_data['ratings_engaging_zscore'], train_data['subject_ids'],
+        test_size=val_size, random_state=0, shuffle=True,
+    )
+    new_train_data = {
+        'SN_input_ids': SN_input_ids_train,
+        'SN_attention_mask': SN_attention_mask_train,
+        'SN_WORD_len': SN_WORD_len_train,
+        'WORD_ids_sn': WORD_ids_sn_train,
+        'SP_input_ids': SP_input_ids_train,
+        'SP_attention_mask': SP_attention_mask_train,
+        'WORD_ids_sp': WORD_ids_sp_train,
+        'SP_ordinal_pos': SP_ordinal_pos_train,
+        'SP_fix_dur': SP_fix_dur_train,
+        'SP_len': SP_len_train,
+        'ratings_difficulty': ratings_difficulty_train,
+        'ratings_difficulty_one_hot': ratings_difficulty_one_hot_train,
+        'ratings_difficulty_zscore': ratings_difficulty_zscore_train,
+        'ratings_engaging': ratings_engaging_train,
+        'ratings_engaging_one_hot': ratings_engaging_one_hot_train,
+        'ratings_engaging_zscore': ratings_engaging_zscore_train,
+        'subject_ids': subject_ids_train,
+    }
+    val_data = {
+        'SN_input_ids': SN_input_ids_test,
+        'SN_attention_mask': SN_attention_mask_test,
+        'SN_WORD_len': SN_WORD_len_test,
+        'WORD_ids_sn': WORD_ids_sn_test,
+        'SP_input_ids': SP_input_ids_test,
+        'SP_attention_mask': SP_attention_mask_test,
+        'WORD_ids_sp': WORD_ids_sp_test,
+        'SP_ordinal_pos': SP_ordinal_pos_test,
+        'SP_fix_dur': SP_fix_dur_test,
+        'SP_len': SP_len_test,
+        'ratings_difficulty': ratings_difficulty_test,
+        'ratings_difficulty_one_hot': ratings_difficulty_one_hot_test,
+        'ratings_difficulty_zscore': ratings_difficulty_zscore_test,
+        'ratings_engaging': ratings_engaging_test,
+        'ratings_engaging_one_hot': ratings_engaging_one_hot_test,
+        'ratings_engaging_zscore': ratings_engaging_zscore_test,
+        'subject_ids': subject_ids_test,
+    }
+    return new_train_data, val_data
+
+
+def gradient_clipping(model, clip: int = 10):
+    nn.utils.clip_grad_norm_(model.parameters(), clip)
 
 
 
