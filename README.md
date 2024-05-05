@@ -108,6 +108,7 @@ the result of which should look like the following:
     │   │   ├── RESULTS_QUESTIONNAIRE.txt
     │   │   ├── RESULTS_QUESTIONS.txt
     │   └── ...
+    ├── stimuli_columns_descriptions.csv
     ├── stimuli.csv
 ```
 
@@ -132,6 +133,7 @@ bash run_edf2asc.sh
     │   │   ├── RESULTS_QUESTIONNAIRE.txt
     │   │   ├── RESULTS_QUESTIONS.txt
     │   └── ...
+    ├── stimuli_columns_descriptions.csv
     ├── stimuli.csv
 ```
 
@@ -156,6 +158,7 @@ The resulting data directory structure will then look like this:
     │   │   ├── RESULTS_QUESTIONNAIRE.txt
     │   │   ├── RESULTS_QUESTIONS.txt
     │   └── ...
+    ├── stimuli_columns_descriptions.csv
     ├── stimuli.csv
 ```
 
@@ -213,6 +216,7 @@ saccade velocity over amplitude is plotted):
     │   │   ├── RESULTS_QUESTIONNAIRE.txt
     │   │   ├── RESULTS_QUESTIONS.txt
     │   └── ...
+    ├── stimuli_columns_descriptions.csv
     ├── stimuli.csv
 ```
 
@@ -270,6 +274,7 @@ will iterate through all files of all subjects. The resulting directory structur
     │   │   ├── RESULTS_QUESTIONNAIRE.txt
     │   │   ├── RESULTS_QUESTIONS.txt
     │   └── ...
+    ├── stimuli_columns_descriptions.csv
     ├── stimuli.csv
 ```
 
@@ -322,6 +327,7 @@ done on corrected fixations. If it is omitted, reading measures are computed on 
     │   │   ├── RESULTS_QUESTIONNAIRE.txt
     │   │   ├── RESULTS_QUESTIONS.txt
     │   └── ...
+    ├── stimuli_columns_descriptions.csv
     ├── stimuli.csv
 ```
 
@@ -418,5 +424,6 @@ The resulting folder structure will then look like this:
     ├── fixations_corrected.csv
     ├── reading_measures.csv
     ├── reading_measures_corrected.csv
+    ├── stimuli_columns_descriptions.csv
     ├── stimuli.csv
 ```
