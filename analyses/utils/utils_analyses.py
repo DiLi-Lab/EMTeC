@@ -12,6 +12,7 @@ from transformers import BertTokenizerFast
 from torch.utils.data import Dataset
 import torch.nn as nn
 import torch
+import torch.nn.functional as F
 
 
 def compute_word_length(arr):
@@ -114,7 +115,7 @@ def prepare_eyettention_input(
 
     for fix_df_idx, fix_df in enumerate(fixations_dfs):
 
-        if fix_df_idx == 400:
+        if fix_df_idx == 30:
             break
 
         print(f'--- preparing scanpath {fix_df_idx + 1}/{len(fixations_dfs)} ---')
@@ -258,9 +259,9 @@ def prepare_eyettention_input(
     ratings_difficulty_one_hot = nn.functional.one_hot(torch.tensor(ratings_difficulty) - 1, num_classes=5)
     ratings_engaging_one_hot = nn.functional.one_hot(torch.tensor(ratings_engaging) - 1, num_classes=5)
 
-    #ratings_difficulty = np.asarray(ratings_difficulty, dtype=np.int64)
+    ratings_difficulty = np.asarray(ratings_difficulty, dtype=np.int64)
     ratings_difficulty_zscore = np.asarray(ratings_difficulty_zscore, dtype=np.float32)
-    #ratings_engaging = np.asarray(ratings_engaging, dtype=np.int64)
+    ratings_engaging = np.asarray(ratings_engaging, dtype=np.int64)
     ratings_engaging_zscore = np.asarray(ratings_engaging_zscore, dtype=np.float32)
 
     data = {
@@ -274,8 +275,10 @@ def prepare_eyettention_input(
         'SP_ordinal_pos': np.array(SP_ordinal_pos),
         'SP_fix_dur': np.array(SP_fix_dur),
         'SP_len': SP_len,
+        'ratings_difficulty': ratings_difficulty,
         'ratings_difficulty_one_hot': ratings_difficulty_one_hot,
         'ratings_difficulty_zscore': ratings_difficulty_zscore,
+        'ratings_engaging': ratings_engaging,
         'ratings_engaging_one_hot': ratings_engaging_one_hot,
         'ratings_engaging_zscore': ratings_engaging_zscore,
     }
@@ -303,8 +306,10 @@ class EMTeCDataset(Dataset):
         sample['sp_pos'] = self.data['SP_ordinal_pos'][idx, :]
         sample['sp_fix_dur'] = self.data['SP_fix_dur'][idx, :]
         sample['sp_len'] = self.data['SP_len'][idx]
+        sample['rating_difficulty'] = self.data['ratings_difficulty'][idx]
         sample['rating_difficulty_one_hot'] = self.data['ratings_difficulty_one_hot'][idx, :]
         sample['rating_difficulty_zscore'] = self.data['ratings_difficulty_zscore'][idx]
+        sample['rating_engaging'] = self.data['ratings_engaging'][idx]
         sample['rating_engaging_one_hot'] = self.data['ratings_engaging_one_hot'][idx, :]
         sample['rating_engaging_zscore'] = self.data['ratings_engaging_zscore'][idx]
         return sample
@@ -331,6 +336,58 @@ def calculate_mean_std(dataloader, feat_key, padding_value=0, scale=1):
         sum_of_squared_error += (((feat - feat_mean).pow(2)) * mask).sum()
     feat_std = torch.sqrt(sum_of_squared_error / total_num)
     return feat_mean, feat_std
+
+
+# this loss doesn't make sense as it attributes higher weights to the higher ratings
+# def ordinal_logistic_loss(
+#         predictions: torch.Tensor,
+#         targets: torch.Tensor,
+# ):
+#     """
+#     Ordered logisitc loss function.
+#     :param predictions: predicted logits or probabilities (tensor)
+#     :param targets: true labels (tensor)
+#     :return: ordinal logistic loss (tensor)
+#     """
+#     loss = 0
+#     for i in range(predictions.size(0)):
+#         # compute the cumulative logits for each class
+#         breakpoint()
+#         cumulative_logits = torch.cumsum(predictions[i], dim=0)
+#         # compute the loss for each class
+#         class_loss = F.cross_entropy(cumulative_logits.unsqueeze(0), targets[i])
+#         loss += class_loss
+#     return loss / predictions.size(0)
+
+
+class OrdinalHingeLoss(nn.Module):
+    def __init__(self, num_classes, device):
+        super(OrdinalHingeLoss, self).__init__()
+        self.num_classes = num_classes
+        self.device = device
+
+        # thresholds are learnable parameters representing the thresholds that define the boundaries between classes.
+        # they are initialized uniformly between -1 and 1 and are learned during training.
+        self.thresholds = nn.Parameter(torch.Tensor(num_classes)).to(self.device)
+        nn.init.uniform_(self.thresholds, -1, 1)
+
+    def forward(self, predictions, targets):
+        """
+        Compute the ordinal hinge loss.
+        :param predictions: Predicted logits (Tensor)
+        :param targets: True labels (Tensor)
+        :return: Ordinal hinge loss (Tensor)
+        """
+        # compute the differences between predicted logits and thresholds
+        breakpoint()
+        diff = predictions.unsqueeze(1) - self.thresholds.unsqueeze(0)
+        # compute the hinge loss for each class
+        hinge_loss = F.relu(diff * (targets.unsqueeze(1) - torch.arange(self.num_classes).to(self.device).unsqueeze(0)).float())
+        # sum hinge loss over classes
+        loss = hinge_loss.sum(dim=1)
+        # average loss over samples
+        return loss.mean()
+
 
 
 
