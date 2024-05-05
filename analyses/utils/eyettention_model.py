@@ -89,7 +89,8 @@ class Eyettention(nn.Module):
         if target == 'sn':
             max_len = self.cf["max_sn_len"]  # CLS and SEP included
         elif target == 'sp':
-            max_len = self.cf["max_sp_len"] - 1  # do not account the 'SEP' token
+            #max_len = self.cf["max_sp_len"] - 1  # do not account the 'SEP' token
+            max_len = self.cf['max_sp_len']
 
         merged_word_emb = torch.empty(subword_emb.shape[0], 0, 768).to(subword_emb.device)
         for word_idx in range(max_len):
@@ -185,7 +186,8 @@ class Eyettention(nn.Module):
             sp_merged_word_emd, sp_mask_word = dec_emb_in, None
 
         # add positional embeddings
-        position_embeddings = self.position_embeddings(sp_pos[:, :-1])
+        #position_embeddings = self.position_embeddings(sp_pos[:, :-1])
+        position_embeddings = self.position_embeddings(sp_pos)
         dec_emb_in = sp_merged_word_emd + position_embeddings
         dec_emb_in = self.LayerNorm(dec_emb_in)
         dec_emb_in = dec_emb_in.permute(1, 0, 2)  # [step, n, emb_dim]
@@ -196,7 +198,8 @@ class Eyettention(nn.Module):
             dec_emb_in = torch.cat((dec_emb_in, sp_landing_pos.permute(1, 0)[:-1, :, None]), dim=2)
 
         if sp_fix_dur is not None:
-            dec_emb_in = torch.cat((dec_emb_in, sp_fix_dur.permute(1, 0)[:-1, :, None]), dim=2)
+            #dec_emb_in = torch.cat((dec_emb_in, sp_fix_dur.permute(1, 0)[:-1, :, None]), dim=2)
+            dec_emb_in = torch.cat((dec_emb_in, sp_fix_dur.permute(1, 0)[:, :, None]), dim=2)
 
         # Predict output for each time step in turn
         output = []
@@ -523,7 +526,8 @@ class ClassificationModel(nn.Module):
             # we need to access the last state of the eyettention output
             # because the outputs are padded to max_sp_len, we need to access the last non-padded state (of last fix.)
             # the resulting tensor has shape [batch, hidden_size]
-            dense_input = out_eyettention[torch.arange(out_eyettention.size(0)), sp_len, :]
+            # subtract -1 from sp_len because if scanpath has length 100, we index that token at position 99
+            dense_input = out_eyettention[torch.arange(out_eyettention.size(0)), sp_len - 1, :]
 
         # pipe through dense layers
         out = self.dense(dense_input)
