@@ -85,6 +85,18 @@ def get_parser() -> ArgumentParser:
         choices=['subject', 'random'],
         help='How to split the data for cross-validation.',
     )
+    parser.add_argument(
+        '--normalized',
+        default=False,
+        action='store_true',
+        help='Whether we use the labels as they are or whether they are z-score normalized.',
+    )
+    parser.add_argument(
+        '--bsz',
+        default=8,
+        type=int,
+        help='The batch size to use for training and testing.',
+    )
     return parser
 
 
@@ -110,6 +122,8 @@ def main():
         n_targets = 5
         if args.loss == 'mse':
             raise RuntimeError('For classification, a categorical loss function should be used.')
+        if args.normalized:
+            raise RuntimeError('If predicting the normalized labels, regression should be used.')
     elif args.task == 'regression':
         n_targets = 1
         if args.loss != 'mse':
@@ -125,7 +139,7 @@ def main():
         'n_epochs': 1000,
         'n_folds': 5,
         'atten_type': args.atten_type,
-        'batch_size': 8,  # TODO: change
+        'batch_size': args.bsz,  # TODO: change
         'max_sn_len': 132,
         'max_sn_token': 169,
         'max_sp_len': 303,
@@ -141,11 +155,12 @@ def main():
         'target': args.target,
         'task': args.task,
         'split': args.split,
+        'normalized': args.normalized,
     }
 
     # save paths
     model_save_basepath = '/srv/scratch1/bolliger/EMTeC/analyses/eyettention_classification'
-    model_name = f'{args.eyettention_output}-{args.classification_input}-{args.loss}-{args.task}-{args.target}-{args.split}'
+    model_name = f'{args.eyettention_output}-{args.classification_input}-{args.loss}-{args.task}-{args.target}-{args.split}-{args.target}-{args.normalized}-{args.bsz}'
     model_savepath = os.path.join(model_save_basepath, model_name)
     if not os.path.exists(model_savepath):
         os.makedirs(model_savepath)
@@ -177,12 +192,19 @@ def main():
         n_splits=cf['n_folds'],
         group=data['subject_ids'],
     )):
+
+        # TODO remove break
+        if fold_idx == 1:
+            break
+
         # dict to hold the training progress
         loss_dict = {
             'train_loss': list(),
             'val_loss': list(),
             'test_mse': list(),
             'test_AUC': list(),
+            'test_predicted_labels': list(),
+            'test_true_labels': list(),
         }
 
         # split the data into train and test fold
@@ -241,7 +263,7 @@ def main():
 
             for batch_idx, batch in enumerate(train_dataloader):
 
-                print(f'--- training epoch {epoch} batch {batch_idx}', end='\t')
+                print(f'--- fold {fold_idx} training epoch {epoch} batch {batch_idx}', end='\t')
 
                 sn_input_ids = batch['sn_input_ids'].to(device)
                 sn_attention_mask = batch['sn_attention_mask'].to(device)
@@ -267,14 +289,20 @@ def main():
                     if cf['task'] == 'classification':
                         labels = batch['rating_difficulty_one_hot'].to(device)
                     elif cf['task'] == 'regression':
-                        labels = batch['rating_difficulty'].to(device)
+                        if cf['normalized']:
+                            labels = batch['rating_difficulty_zscore'].to(device)
+                        else:
+                            labels = batch['rating_difficulty'].to(device)
                     else:
                         raise NotImplementedError
                 elif cf['target'] == 'engaging':
                     if cf['task'] == 'classification':
                         labels = batch['rating_engaging_one_hot'].to(device)
                     elif cf['task'] == 'regression':
-                        labels = batch['rating_engaging'].to(device)
+                        if cf['normalized']:
+                            labels = batch['rating_engaging_zscore'].to(device)
+                        else:
+                            labels = batch['rating_engaging'].to(device)
                     else:
                         raise NotImplementedError
 
@@ -309,14 +337,14 @@ def main():
                 optimizer.step()
 
                 av_score.append(loss.to('cpu').detach().numpy())
-                print('\r error: {:.10f} '.format(loss.item()))
+                print(f'error: {loss.to("cpu").detach().numpy()}')
 
             loss_dict['train_loss'].append(loss.to('cpu').detach().numpy())
 
             val_loss = list()
             model.eval()
             for batch_idx, batch in enumerate(val_dataloader):
-                print('--- validation ...')
+                print(f'--- fold {fold_idx} validation epoch {epoch} batch {batch_idx}')
                 with torch.no_grad():
                     sn_input_ids = batch['sn_input_ids'].to(device)
                     sn_attention_mask = batch['sn_attention_mask'].to(device)
@@ -342,14 +370,20 @@ def main():
                         if cf['task'] == 'classification':
                             labels = batch['rating_difficulty_one_hot'].to(device)
                         elif cf['task'] == 'regression':
-                            labels = batch['rating_difficulty'].to(device)
+                            if cf['normalized']:
+                                labels = batch['rating_difficulty_zscore'].to(device)
+                            else:
+                                labels = batch['rating_difficulty'].to(device)
                         else:
                             raise NotImplementedError
                     elif cf['target'] == 'engaging':
                         if cf['task'] == 'classification':
                             labels = batch['rating_engaging_one_hot'].to(device)
                         elif cf['task'] == 'regression':
-                            labels = batch['rating_engaging'].to(device)
+                            if cf['normalized']:
+                                labels = batch['rating_engaging_zscore'].to(device)
+                            else:
+                                labels = batch['rating_engaging'].to(device)
                         else:
                             raise NotImplementedError
 
@@ -387,6 +421,7 @@ def main():
                 # early stopping
                 if epoch - save_ep_counter >= cf['earlystop_patience']:
                     break
+                    loss_dict['early_stopping'] = True
 
         # evaluation
         # load the model at the best epoch
@@ -395,8 +430,11 @@ def main():
         model.eval()
         test_outputs = list()
         test_labels = list()
-        for batch in test_dataloader:
+        for batch_idx, batch in enumerate(test_dataloader):
             with torch.no_grad():
+
+                print(f'--- fold {fold_idx} testing batch {batch_idx}')
+
                 sn_input_ids = batch['sn_input_ids'].to(device)
                 sn_attention_mask = batch['sn_attention_mask'].to(device)
                 word_ids_sn = batch['word_ids_sn'].to(device)
@@ -421,14 +459,20 @@ def main():
                     if cf['task'] == 'classification':
                         labels = batch['rating_difficulty_one_hot'].to(device)
                     elif cf['task'] == 'regression':
-                        labels = batch['rating_difficulty'].to(device)
+                        if cf['normalized']:
+                            labels = batch['rating_difficulty_zscore'].to(device)
+                        else:
+                            labels = batch['rating_difficulty'].to(device)
                     else:
                         raise NotImplementedError
                 elif cf['target'] == 'engaging':
                     if cf['task'] == 'classification':
                         labels = batch['rating_engaging_one_hot'].to(device)
                     elif cf['task'] == 'regression':
-                        labels = batch['rating_engaging'].to(device)
+                        if cf['normalized']:
+                            labels = batch['rating_engaging_zscore'].to(device)
+                        else:
+                            labels = batch['rating_engaging'].to(device)
                     else:
                         raise NotImplementedError
 
@@ -449,6 +493,12 @@ def main():
                 if cf['task'] == 'regression':
                     loss = loss_fn(out.squeeze(), labels.float())
                     loss_dict['test_mse'].append(loss.item())
+                    test_labels_list = labels.tolist()
+                    test_predictions_list = out.squeeze(1).tolist()
+                    for test_label in test_labels_list:
+                        loss_dict['test_true_labels'].append(test_label)
+                    for test_prediction in test_predictions_list:
+                        loss_dict['test_predicted_labels'].append(test_prediction)
 
         # if we do classification, compute AUC
         if cf['task'] == 'classification':
