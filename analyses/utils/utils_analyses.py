@@ -82,15 +82,16 @@ def prepare_eyettention_input(
         ratings_dfs[name] = group
 
     # TODO remove break index and break statements below
-    break_idx = 200
+    break_idx = None
 
     # save all rating values in lists
     ratings_difficulty, ratings_difficulty_zscore = list(), list()
     ratings_engaging, ratings_engaging_zscore = list(), list()
     for fix_df_idx, fix_df in enumerate(fixations_dfs):
 
-        if fix_df_idx == break_idx:
-            break
+        if break_idx is not None:
+            if fix_df_idx == break_idx:
+                break
 
         subject_id = fix_df['subject_id'].unique().item()
         item_id = fix_df['item_id'].unique().item()
@@ -126,8 +127,9 @@ def prepare_eyettention_input(
 
     for fix_df_idx, fix_df in enumerate(fixations_dfs):
 
-        if fix_df_idx == break_idx:
-            break
+        if break_idx is not None:
+            if fix_df_idx == break_idx:
+                break
 
         print(f'--- preparing scanpath {fix_df_idx + 1}/{len(fixations_dfs)} ---')
 
