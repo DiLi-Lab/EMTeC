@@ -110,9 +110,11 @@ def main():
 
     # which label to use
     label_key = ''
+    label_key_onehot = ''
     task = ''
     if args.target == 'text-type':
         label_key = 'text_types_int'
+        label_key_onehot = 'text_types_onehot'
         task = 'classification'
     elif args.target == 'difficulty':
         if args.normalized:
@@ -120,10 +122,12 @@ def main():
             task = 'regression'
         else:
             label_key = 'difficulty_labels'
+            label_key_onehot = 'difficulty_onehot_labels'
             task = 'classification'
     elif args.target == 'engaging':
         if args.normalized:
             label_key = 'engaging_zscore_labels'
+            label_key_onehot = 'engaging_onehot_labels'
             task = 'regression'
         else:
             label_key = 'engaging_labels'
@@ -150,11 +154,11 @@ def main():
             'train_loss': list(),
             'val_loss': list(),
             'test_loss': list(),
-            'test_AUC': list(),
-            'true_test_labels_regression': list(),
-            'pred_test_labels_regression': list(),
-            'true_test_labels_classification': list(),
-            'pred_test_labels_classification': list(),
+            #'test_AUC': list(),
+            #'true_test_labels_regression': list(),
+            #'pred_test_labels_regression': list(),
+            #'true_test_labels_classification': list(),
+            #'pred_test_labels_classification': list(),
         }
 
         # split the data into train and test fold
@@ -205,6 +209,7 @@ def main():
         for epoch in range(config['n_epochs']):
             model.train()
 
+            # TODO remove break
             if epoch == 2:
                 break
 
@@ -244,6 +249,7 @@ def main():
             model.eval()
             for batch_idx, batch in enumerate(val_dataloader):
 
+                # TODO remove break
                 if batch_idx == 2:
                     break
 
@@ -251,7 +257,7 @@ def main():
                 with torch.no_grad():
                     features = batch['features'].to(device)
                     mask = batch['mask'].to(device)
-                    labels = batch['label_key'].to(device)
+                    labels = batch[label_key].to(device)
 
                     out = model(
                         features=features,
@@ -280,44 +286,79 @@ def main():
         model.load_state_dict(torch.load(os.path.join(model_savepath, f'model-fold{fold_idx}.pth'), map_location='cpu'))
         model.to(device)
         model.eval()
-        test_outputs, test_labels = list(), list()
+        test_outputs, test_labels, test_labels_onehot = list(), list(), list()
 
         for batch_idx, batch in enumerate(test_dataloader):
+
+            # TODO remove break
+            # if batch_idx == 2:
+            #     break
 
             with torch.no_grad():
                 print(f'--- fold {fold_idx} testing batch {batch_idx}')
                 features = batch['features'].to(device)
                 mask = batch['mask'].to(device)
-                labels = batch['label_key'].to(device)
+                labels = batch[label_key].to(device)
                 out = model(
                     features=features,
                     attention_mask=mask,
                 )
                 loss = loss_fn(out, labels)
                 stats_dict['test_loss'].append(loss.to('cpu').detach().numpy())
+                breakpoint()
 
-                test_outputs.append(out.cpu())
-                test_labels.append(labels.cpu())
+                if task == 'classification':
+                    test_outputs.append(out.to('cpu').detach().numpy())
+                    test_labels.append(labels.to('cpu').detach().numpy())
+                    test_labels_onehot.append(batch[label_key_onehot].to('cpu').detach().numpy())
 
                 if task == 'regression':
-                    test_labels_list = labels.tolist()
-                    test_predictions_list = out.squeeze(1).tolist()
-                    for test_label in test_labels_list:
-                        stats_dict['true_test_labels_regression'].append(test_label)
-                    for test_prediction in test_predictions_list:
-                        stats_dict['pred_test_labels_regression'].append(test_prediction)
+                    for l in labels:
+                        test_labels.append(l.item())
+                    for o in out.squeeze(1):
+                        test_outputs.append(o.item())
+
+
 
         if task == 'classification':
-            all_test_outputs = torch.cat([t.view(-1, n_targets) for t in test_outputs], dim=0)
+            breakpoint()
+            # flatten the array of test outputs from [n batches, batch size, n classes] into [n samples, n classes]
+            all_test_outputs_flattened = np.concatenate(test_outputs, axis=0)
+            # convert the logits into probabilities
+            probabilities = nn.functional.softmax(torch.tensor(all_test_outputs_flattened), dim=1)
+            # flatten the true one-hot encoded test labels
+            labels_onehot_flattened = np.concatenate(test_labels_onehot, axis=0)
+            # compute the AUC score
+            auc_score = roc_auc_score(y_true=labels_onehot_flattened, y_score=probabilities)
+            #all_test_outputs = torch.cat([t.view(-1, n_targets) for t in test_outputs], dim=0)
             #all_test_labels = torch.cat([t.view(-1, n_targets) for t in test_labels], dim=0)
-            probabilities = nn.functional.softmax(all_test_outputs, dim=1).cpu()
-            auc_score = roc_auc_score(test_labels, probabilities[:, test_labels])
-            stats_dict['test_AUC'].append(auc_score)
-            for test_label in test_labels:
-                stats_dict['true_test_labels_classification'].append(test_label)
-            predicted_classes = torch.argmax(probabilities, dim=1)
-            for pred_class in predicted_classes:
-                stats_dict['pred_test_labels_classification'].append(pred_class)
+            #probabilities = nn.functional.softmax(all_test_outputs, dim=1).cpu()
+            #auc_score = roc_auc_score(test_labels, probabilities[:, test_labels])
+
+            # get the actual predicted classes/predicted indices of the model
+            pred_classes = torch.argmax(probabilities, dim=1)
+            # flatten the true test labels (same as torch argmaxing the one-hot encoded labels)
+            test_labels_flattened = torch.tensor(np.concatenate(test_labels, axis=0))
+
+            # add AUC score, predicted labels, true labels, etc. to stats dict
+            stats_dict['test_AUC'] = auc_score
+            stats_dict['true_labels_classification'] = test_labels_flattened.tolist()
+            stats_dict['pred_labels_classification'] = pred_classes.tolist()
+            stats_dict['true_labels_onehot_classification'] = labels_onehot_flattened
+            stats_dict['pred_logits_classification'] = all_test_outputs_flattened
+            stats_dict['pred_probabilities_classification'] = probabilities
+
+        if task == 'regression':
+            stats_dict['true_labels_regression'] = test_outputs
+            stats_dict['pred_labels_regression'] = test_labels
+
+
+            # stats_dict['test_AUC'].append(auc_score)
+            # for test_label in test_labels:
+            #     stats_dict['true_test_labels_classification'].append(test_label)
+            # predicted_classes = torch.argmax(probabilities, dim=1)
+            # for pred_class in predicted_classes:
+            #     stats_dict['pred_test_labels_classification'].append(pred_class)
 
     # save config
     with open(os.path.join(model_savepath, 'config.pickle'), 'wb') as handle:
