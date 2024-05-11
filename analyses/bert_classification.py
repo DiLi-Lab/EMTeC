@@ -127,10 +127,10 @@ def main():
     elif args.target == 'engaging':
         if args.normalized:
             label_key = 'engaging_zscore_labels'
-            label_key_onehot = 'engaging_onehot_labels'
             task = 'regression'
         else:
             label_key = 'engaging_labels'
+            label_key_onehot = 'engaging_onehot_labels'
             task = 'classification'
 
 
@@ -233,7 +233,11 @@ def main():
                     attention_mask=mask,
                 )
 
-                loss = loss_fn(out, labels)
+
+                if task == 'regression':
+                    loss = loss_fn(out.squeeze(), labels)
+                else:
+                    loss = loss_fn(out, labels)
 
 
                 loss.backward()
@@ -263,7 +267,10 @@ def main():
                         features=features,
                         attention_mask=mask,
                     )
-                    loss = loss_fn(out, labels)
+                    if task == 'regression':
+                        loss = loss_fn(out.squeeze(), labels)
+                    else:
+                        loss = loss_fn(out, labels)
                     val_loss.append(loss.to('cpu').detach().numpy())
                     stats_dict['val_loss'].append(loss.to('cpu').detach().numpy())
 
@@ -303,7 +310,11 @@ def main():
                     features=features,
                     attention_mask=mask,
                 )
-                loss = loss_fn(out, labels)
+
+                if task == 'regression':
+                    loss = loss_fn(out.squeeze(), labels)
+                else:
+                    loss = loss_fn(out, labels)
                 stats_dict['test_loss'].append(loss.to('cpu').detach().numpy())
 
                 if task == 'classification':
