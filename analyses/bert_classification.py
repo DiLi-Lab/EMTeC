@@ -305,7 +305,6 @@ def main():
                 )
                 loss = loss_fn(out, labels)
                 stats_dict['test_loss'].append(loss.to('cpu').detach().numpy())
-                breakpoint()
 
                 if task == 'classification':
                     test_outputs.append(out.to('cpu').detach().numpy())
