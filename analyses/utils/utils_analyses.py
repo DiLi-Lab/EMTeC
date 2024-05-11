@@ -700,7 +700,6 @@ def prepare_bert_input(
     difficulty_zscore_labels = list()
     engaging_labels = list()
     engaging_zscore_labels = list()
-    subject_ids = list()
     text_types_int = list()
     text_types_str = list()
     # lists to hold the readability metrics
@@ -712,6 +711,11 @@ def prepare_bert_input(
     ari_scores = list()
     linsear_write_scores = list()
     spache_scores = list()
+
+    subject_ids = list()
+    model = list()
+    decoding_strategy = list()
+    item_id = list()
 
     rms = pd.read_csv(path_to_rms, sep='\t')
     rms_grouped = rms.groupby(['subject_id', 'item_id'])
@@ -779,7 +783,6 @@ def prepare_bert_input(
         difficulty_zscore_labels.append(difficulty_zscore)
         engaging_labels.append(engaging)
         engaging_zscore_labels.append(engaging_zscore)
-        subject_ids.append(subject_id)
         text_types_str.append(text_type_str)
         text_types_int.append(text_type_int)
 
@@ -791,6 +794,11 @@ def prepare_bert_input(
         ari_scores.append(ari)
         linsear_write_scores.append(linsear_write)
         spache_scores.append(spache)
+
+        subject_ids.append(subject_id)
+        model.append(model)
+        decoding_strategy.append(decoding_strategy)
+        item_id.append(item_id)
 
 
 
@@ -809,7 +817,6 @@ def prepare_bert_input(
     difficulty_zscore_labels = np.asarray(difficulty_zscore_labels, dtype=np.float32)
     engaging_labels = np.asarray(engaging_labels, dtype=np.int64) - 1
     engaging_zscore_labels = np.asarray(engaging_zscore_labels, dtype=np.float32)
-    subject_ids = np.array(subject_ids)
     text_types_str = np.array(text_types_str)
     text_types_int = np.asarray(text_types_int, dtype=np.int64)
     flesch_scores = np.asarray(flesch_scores, dtype=np.float32)
@@ -820,6 +827,10 @@ def prepare_bert_input(
     ari_scores = np.asarray(ari_scores, dtype=np.float32)
     linsear_write_scores = np.asarray(linsear_write_scores, dtype=np.float32)
     spache_scores = np.asarray(spache_scores, dtype=np.float32)
+    subject_ids = np.array(subject_ids)
+    model = np.array(model)
+    decoding_strategy = np.array(decoding_strategy)
+    item_id = np.array(item_id)
 
     data = {
         'features': features,
@@ -831,6 +842,9 @@ def prepare_bert_input(
         'engaging_zscore_labels': engaging_zscore_labels,
         'engaging_onehot_labels': engaging_onehot_labels,
         'subject_ids': subject_ids,
+        'model': model,
+        'decoding_strategy': decoding_strategy,
+        'item_id': item_id,
         'text_types_str': text_types_str,
         'text_types_int': text_types_int,
         'text_types_onehot': text_types_onehot,
@@ -866,6 +880,9 @@ class EMTeCBert(Dataset):
         sample['engaging_zscore_labels'] = self.data['engaging_zscore_labels'][idx]
         sample['engaging_onehot_labels'] = self.data['engaging_onehot_labels'][idx, :]
         sample['subject_ids'] = self.data['subject_ids'][idx]
+        sample['model'] = self.data['model'][idx]
+        sample['decoding_strategy'] = self.data['decoding_strategy'][idx]
+        sample['item_id'] = self.data['item_id'][idx]
         sample['text_types_str'] = self.data['text_types_str'][idx]
         sample['text_types_int'] = self.data['text_types_int'][idx]
         sample['text_types_onehot'] = self.data['text_types_onehot'][idx, :]
@@ -972,13 +989,14 @@ def split_train_val_bert(
     :param val_size:
     :return:
     """
-    features_train, features_test, mask_train, mask_test, difficulty_labels_train, difficulty_labels_test, difficulty_zscore_labels_train, difficulty_zscore_labels_test, difficulty_onehot_labels_train, difficulty_onehot_labels_test, engaging_labels_train, engaging_labels_test, engaging_zscore_labels_train, engaging_zscore_labels_test, engaging_onehot_labels_train, engaging_onehot_labels_test, subject_ids_train, subject_ids_test, text_types_str_train, text_types_str_test, text_types_int_train, text_types_int_test, text_types_onehot_train, text_types_onehot_test, flesch_train, flesch_test, flesch_kincaid_train, flesch_kincaid_test, gunning_fog_train, gunning_fog_test, coleman_liau_train, coleman_liau_test, dale_chall_train, dale_chall_test, ari_train, ari_test, linsear_write_train, linsear_write_test, spache_train, spache_test = train_test_split(
+    features_train, features_test, mask_train, mask_test, difficulty_labels_train, difficulty_labels_test, difficulty_zscore_labels_train, difficulty_zscore_labels_test, difficulty_onehot_labels_train, difficulty_onehot_labels_test, engaging_labels_train, engaging_labels_test, engaging_zscore_labels_train, engaging_zscore_labels_test, engaging_onehot_labels_train, engaging_onehot_labels_test, subject_ids_train, subject_ids_test, text_types_str_train, text_types_str_test, text_types_int_train, text_types_int_test, text_types_onehot_train, text_types_onehot_test, flesch_train, flesch_test, flesch_kincaid_train, flesch_kincaid_test, gunning_fog_train, gunning_fog_test, coleman_liau_train, coleman_liau_test, dale_chall_train, dale_chall_test, ari_train, ari_test, linsear_write_train, linsear_write_test, spache_train, spache_test, model_train, model_test, item_id_train, item_id_test, decoding_strategy_train, decoding_strategy_test = train_test_split(
         train_data['features'], train_data['mask'], train_data['difficulty_labels'], train_data['difficulty_zscore_labels'],
         train_data['difficulty_onehot_labels'], train_data['engaging_labels'], train_data['engaging_zscore_labels'],
         train_data['engaging_onehot_labels'], train_data['subject_ids'], train_data['text_types_str'],
         train_data['text_types_int'], train_data['text_types_onehot'], train_data['flesch'], train_data['flesch_kincaid'],
         train_data['gunning_fog'], train_data['coleman_liau'], train_data['dale_chall'], train_data['ari'],
-        train_data['linsear_write'], train_data['spache'],
+        train_data['linsear_write'], train_data['spache'], train_data['model'], train_data['item_id'],
+        train_data['decoding_strategy'],
         test_size=val_size, random_state=0, shuffle=True,
     )
     new_train_data = {
@@ -991,6 +1009,9 @@ def split_train_val_bert(
         'engaging_zscore_labels': engaging_zscore_labels_train,
         'engaging_onehot_labels': engaging_onehot_labels_train,
         'subject_ids': subject_ids_train,
+        'model': model_train,
+        'item_id': item_id_train,
+        'decoding_strategy': decoding_strategy_train,
         'text_types_str': text_types_str_train,
         'text_types_int': text_types_int_train,
         'text_types_onehot': text_types_onehot_train,
@@ -1013,6 +1034,9 @@ def split_train_val_bert(
         'engaging_zscore_labels': engaging_zscore_labels_test,
         'engaging_onehot_labels': engaging_onehot_labels_test,
         'subject_ids': subject_ids_test,
+        'model': model_test,
+        'item_id': item_id_test,
+        'decoding_strategy': decoding_strategy_test,
         'text_types_str': text_types_str_test,
         'text_types_int': text_types_int_test,
         'text_types_onehot': text_types_onehot_test,
