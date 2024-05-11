@@ -10,7 +10,7 @@ from analyses.utils.utils_analyses import (
     OrdinalHingeLoss,
     get_kfold,
     subset_data_kfold,
-    split_train_val,
+    split_train_val_eyettention,
     gradient_clipping,
 )
 from transformers import BertTokenizerFast
@@ -75,7 +75,7 @@ def get_parser() -> ArgumentParser:
         '--target',
         type=str,
         default='difficulty',
-        choices=['difficulty', 'engaging'],
+        choices=['difficulty', 'engaging', 'text-type'],
         help='Whether we try to predict subjective text difficulty or engagement of the text.',
     )
     parser.add_argument(
@@ -119,7 +119,10 @@ def main():
 
     # make sure the input arguments make sense
     if args.task == 'classification':
-        n_targets = 5
+        if args.target == 'text-type':
+            n_targets = 6
+        else:
+            n_targets = 5
         if args.loss == 'mse':
             raise RuntimeError('For classification, a categorical loss function should be used.')
         if args.normalized:
@@ -130,6 +133,11 @@ def main():
             raise RuntimeError('For regression, MSE should be used.')
     else:
         raise NotImplementedError(f'The task {args.task} is not implemented.')
+
+    # classifying text types: no regression
+    if args.target == 'text-type':
+        if not args.task == 'classification':
+            raise RuntimeError('Predicting text types only with classification, not with regression.')
 
     # config for training
     cf = {
@@ -211,7 +219,7 @@ def main():
         train_data, test_data = subset_data_kfold(data=data, train_idx=train_idx, test_idx=test_idx)
 
         # split the train data into train and validation data
-        train_data, val_data = split_train_val(train_data=train_data)
+        train_data, val_data = split_train_val_eyettention(train_data=train_data)
 
         # wrap in dataset class
         train_dataset = EMTeCDataset(train_data)
@@ -220,7 +228,7 @@ def main():
 
         # get dataloader iterator
         train_dataloader = DataLoader(train_dataset, batch_size=cf['batch_size'], shuffle=True, drop_last=True)
-        test_dataloader = DataLoader(test_dataset, batch_size=cf['batch_size'], shuffle=False, drop_last=False)
+        test_dataloader = DataLoader(test_dataset, batch_size=cf['batch_size'], shuffle=False, drop_last=True)
         val_dataloader = DataLoader(val_dataset, batch_size=cf['batch_size'], shuffle=False, drop_last=True)
 
         # z-score normalization for gaze features (use the train data)
@@ -260,6 +268,8 @@ def main():
 
         for epoch in range(cf['n_epochs']):
             model.train()
+
+            print(model_savepath)
 
             for batch_idx, batch in enumerate(train_dataloader):
 
@@ -305,6 +315,8 @@ def main():
                             labels = batch['rating_engaging'].to(device)
                     else:
                         raise NotImplementedError
+                elif cf['target'] == 'text-type':
+                    labels = batch['text_type_one_hot'].to(device)
 
                 # zero old gradients
                 optimizer.zero_grad()
@@ -339,7 +351,7 @@ def main():
                 av_score.append(loss.to('cpu').detach().numpy())
                 print(f'error: {loss.to("cpu").detach().numpy()}')
 
-            loss_dict['train_loss'].append(loss.to('cpu').detach().numpy())
+                loss_dict['train_loss'].append(loss.to('cpu').detach().numpy())
 
             val_loss = list()
             model.eval()
@@ -386,6 +398,8 @@ def main():
                                 labels = batch['rating_engaging'].to(device)
                         else:
                             raise NotImplementedError
+                    elif cf['target'] == 'text-type':
+                        labels = batch['text_type_one_hot'].to(device)
 
 
                     out = model(
@@ -407,8 +421,9 @@ def main():
                     elif args.loss == 'mse':
                         loss = loss_fn(out.squeeze(), labels.float())
                     val_loss.append(loss.to('cpu').detach().numpy())
+                    loss_dict['val_loss'].append(loss.to('cpu').detach().numpy())
             print('\n---validation loss is {}'.format(np.mean(val_loss)))
-            loss_dict['val_loss'].append(np.mean(val_loss))
+            #loss_dict['val_loss'].append(np.mean(val_loss))
 
             # check if early stopping should be applied
             if np.mean(val_loss) < old_score:
@@ -420,16 +435,19 @@ def main():
             else:
                 # early stopping
                 if epoch - save_ep_counter >= cf['earlystop_patience']:
-                    break
                     loss_dict['early_stopping'] = True
+                    break
+
 
         # evaluation
         # load the model at the best epoch
+        print(model_savepath)
         model.load_state_dict(torch.load(os.path.join(model_savepath, f'model-fold{fold_idx}.pth'), map_location='cpu'))
         model.to(device)
         model.eval()
         test_outputs = list()
         test_labels = list()
+        test_loss = list()
         for batch_idx, batch in enumerate(test_dataloader):
             with torch.no_grad():
 
@@ -475,6 +493,8 @@ def main():
                             labels = batch['rating_engaging'].to(device)
                     else:
                         raise NotImplementedError
+                elif cf['target'] == 'text-type':
+                    labels = batch['text_type_one_hot'].to(device)
 
                 out = model(
                     sn_input_ids=sn_input_ids,
@@ -490,6 +510,15 @@ def main():
                 test_outputs.append(out.cpu())
                 test_labels.append(labels.cpu())
 
+                if args.loss == 'cross-entropy':
+                    loss = loss_fn(out, labels.float())
+                elif args.loss == 'ordinal-hinge':
+                    loss = loss_fn(out, labels)
+                elif args.loss == 'mse':
+                    loss = loss_fn(out.squeeze(), labels.float())
+
+                test_loss.append(loss.cpu())
+
                 if cf['task'] == 'regression':
                     loss = loss_fn(out.squeeze(), labels.float())
                     loss_dict['test_mse'].append(loss.item())
@@ -504,9 +533,9 @@ def main():
         if cf['task'] == 'classification':
 
             # concatenate all the model outputs such that the resulting tensor is of shape [instances, num_classes]
-            all_test_outputs = torch.cat([t.view(-1, 5) for t in test_outputs], dim=0)
+            all_test_outputs = torch.cat([t.view(-1, cf['n_targets']) for t in test_outputs], dim=0)
             # same for the one-hot encoded labels
-            all_test_labels = torch.cat([t.view(-1, 5) for t in test_labels], dim=0)
+            all_test_labels = torch.cat([t.view(-1, cf['n_targets']) for t in test_labels], dim=0)
             # convert output logits to probabilities
             probabilities = nn.functional.softmax(all_test_outputs, dim=1).cpu()
             true_class_index = np.argmax(all_test_labels.cpu(), axis=1)
