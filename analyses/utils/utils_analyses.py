@@ -664,6 +664,7 @@ def kan_train_test_split(
 def prepare_bert_input(
         path_to_rms: str,
         path_to_ratings: str,
+        path_to_stimuli: str,
         exclude_subjects: List[str],
         max_sn_len: int,
 ):
@@ -677,12 +678,12 @@ def prepare_bert_input(
     text_types = ['summarization', 'non-fiction', 'poetry', 'words_given', 'article_synopsis', 'fiction']
     label_to_index = {label: i for i, label in enumerate(text_types)}
 
-    feature_names = [
-        'FFD', 'SFD', 'FD', 'FPRT', 'FRT', 'TFT', 'RRT',
-        'RPD_inc', 'RPD_exc', 'RBRT', 'Fix', 'FPF', 'RR', 'FPReg', 'TRC_out',
-        'TRC_in', 'SL_in', 'SL_out', 'TFC', 'n_dep_left', 'n_dep_right', 'distance_to_head',
-        'word_length_without_punct', 'word_freq', 'zipf_freq', 'surprisal_gpt2',
-    ]
+    # feature_names = [
+    #     'FFD', 'SFD', 'FD', 'FPRT', 'FRT', 'TFT', 'RRT',
+    #     'RPD_inc', 'RPD_exc', 'RBRT', 'Fix', 'FPF', 'RR', 'FPReg', 'TRC_out',
+    #     'TRC_in', 'SL_in', 'SL_out', 'TFC', 'n_dep_left', 'n_dep_right', 'distance_to_head',
+    #     'word_length_without_punct', 'word_freq', 'zipf_freq', 'surprisal_gpt2',
+    # ]
     feature_names = [
         'FFD', 'SFD', 'FD', 'FPRT', 'FRT', 'TFT', 'RRT',
         'RPD_inc', 'RPD_exc', 'RBRT',
@@ -691,16 +692,8 @@ def prepare_bert_input(
         'TRC_in', 'SL_in', 'SL_out', 'TFC', 'n_dep_left', 'n_dep_right', 'distance_to_head',
         'word_length_without_punct', 'word_freq', 'zipf_freq', 'surprisal_gpt2',
     ]
-    data_dict = {
-        'features': list(),
-        'difficulty': list(),
-        'engaging': list(),
-        'subject_id': list(),
-        'difficulty_zscore': list(),
-        'engaging_zscore': list(),
-        'subject_ids': list(),
-        'text_type': list(),
-    }
+    readability_metrics = ['flesch', 'flesch_kincaid', 'gunning_fog', 'coleman_liau', 'dale_chall', 'ari',
+                           'linsear_write', 'spache']
 
     features = list()
     difficulty_labels = list()
@@ -710,6 +703,15 @@ def prepare_bert_input(
     subject_ids = list()
     text_types_int = list()
     text_types_str = list()
+    # lists to hold the readability metrics
+    flesch_scores = list()
+    flesch_kincaid_scores = list()
+    gunning_fog_scores = list()
+    coleman_liau_scores = list()
+    dale_chall_scores = list()
+    ari_scores = list()
+    linsear_write_scores = list()
+    spache_scores = list()
 
     rms = pd.read_csv(path_to_rms, sep='\t')
     rms_grouped = rms.groupby(['subject_id', 'item_id'])
@@ -727,12 +729,30 @@ def prepare_bert_input(
         group['RATING_ENGAGING_VALUE_zscore'] = zscore(group['RATING_ENGAGING_VALUE'])
         ratings_dfs[name] = group
 
+    # read in stimuli file
+    stimuli = pd.read_csv(path_to_stimuli, sep='\t')
+
     for text_df_idx, text_df in enumerate(rms_list):
+
         print(f'--- preparing text {text_df_idx}')
+
         subject_id = text_df['subject_id'].unique().item()
         item_id = text_df['item_id'].unique().item()
+        model = text_df['model'].unique().item()
+        decoding_strategy = text_df['decoding_strategy'].unique().item()
         text_type_str = text_df['task'].unique().item()
         text_type_int = label_to_index[text_type_str]
+
+        # get the readability scores
+        flesch = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['flesch'].item()
+        flesch_kincaid = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['flesch_kincaid'].item()
+        gunning_fog = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['gunning_fog'].item()
+        coleman_liau = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['coleman_liau'].item
+        dale_chall = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['dale_chall'].item()
+        ari = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['ari'].item()
+        linsear_write = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['linsear_write'].item()
+        spache = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['spache'].item()
+
         if subject_id in exclude_subjects:
             continue
 
@@ -763,6 +783,16 @@ def prepare_bert_input(
         text_types_str.append(text_type_str)
         text_types_int.append(text_type_int)
 
+        flesch_scores.append(flesch)
+        flesch_kincaid_scores.append(flesch_kincaid)
+        gunning_fog_scores.append(gunning_fog)
+        coleman_liau_scores.append(coleman_liau)
+        dale_chall_scores.append(dale_chall)
+        ari_scores.append(ari)
+        linsear_write_scores.append(linsear_write)
+        spache_scores.append(spache)
+
+
 
     # one-hot encoding
     difficulty_onehot_labels = nn.functional.one_hot(torch.tensor(difficulty_labels) - 1, num_classes=5)
@@ -782,6 +812,14 @@ def prepare_bert_input(
     subject_ids = np.array(subject_ids)
     text_types_str = np.array(text_types_str)
     text_types_int = np.asarray(text_types_int, dtype=np.int64)
+    flesch_scores = np.asarray(flesch_scores, dtype=np.float32)
+    flesch_kincaid_scores = np.asarray(flesch_kincaid_scores, dtype=np.float32)
+    gunning_fog_scores = np.asarray(gunning_fog_scores, dtype=np.float32)
+    coleman_liau_scores = np.asarray(coleman_liau_scores, dtype=np.float32)
+    dale_chall_scores = np.asarray(dale_chall_scores, dtype=np.float32)
+    ari_scores = np.asarray(ari_scores, dtype=np.float32)
+    linsear_write_scores = np.asarray(linsear_write_scores, dtype=np.float32)
+    spache_scores = np.asarray(spache_scores, dtype=np.float32)
 
     data = {
         'features': features,
@@ -796,6 +834,14 @@ def prepare_bert_input(
         'text_types_str': text_types_str,
         'text_types_int': text_types_int,
         'text_types_onehot': text_types_onehot,
+        'flesch': flesch_scores,
+        'flesch_kincaid': flesch_kincaid_scores,
+        'gunning_fog': gunning_fog_scores,
+        'coleman_liau': coleman_liau_scores,
+        'dale_chall': dale_chall_scores,
+        'ari': ari_scores,
+        'linsear_write': linsear_write_scores,
+        'spache': spache_scores,
     }
 
     return data
@@ -823,6 +869,15 @@ class EMTeCBert(Dataset):
         sample['text_types_str'] = self.data['text_types_str'][idx]
         sample['text_types_int'] = self.data['text_types_int'][idx]
         sample['text_types_onehot'] = self.data['text_types_onehot'][idx, :]
+        sample['flesch'] = self.data['flesch'][idx]
+        sample['flesch_kincaid'] = self.data['flesch_kincaid'][idx]
+        sample['gunning_fog'] = self.data['gunning_fog'][idx]
+        sample['coleman_liau'] = self.data['coleman_liau'][idx]
+        sample['dale_chall'] = self.data['dale_chall'][idx]
+        sample['ari'] = self.data['ari'][idx]
+        sample['linsear_write'] = self.data['linsear_write'][idx]
+        sample['spache'] = self.data['spache'][idx]
+
         return sample
 
 
@@ -917,11 +972,13 @@ def split_train_val_bert(
     :param val_size:
     :return:
     """
-    features_train, features_test, mask_train, mask_test, difficulty_labels_train, difficulty_labels_test, difficulty_zscore_labels_train, difficulty_zscore_labels_test, difficulty_onehot_labels_train, difficulty_onehot_labels_test, engaging_labels_train, engaging_labels_test, engaging_zscore_labels_train, engaging_zscore_labels_test, engaging_onehot_labels_train, engaging_onehot_labels_test, subject_ids_train, subject_ids_test, text_types_str_train, text_types_str_test, text_types_int_train, text_types_int_test, text_types_onehot_train, text_types_onehot_test = train_test_split(
+    features_train, features_test, mask_train, mask_test, difficulty_labels_train, difficulty_labels_test, difficulty_zscore_labels_train, difficulty_zscore_labels_test, difficulty_onehot_labels_train, difficulty_onehot_labels_test, engaging_labels_train, engaging_labels_test, engaging_zscore_labels_train, engaging_zscore_labels_test, engaging_onehot_labels_train, engaging_onehot_labels_test, subject_ids_train, subject_ids_test, text_types_str_train, text_types_str_test, text_types_int_train, text_types_int_test, text_types_onehot_train, text_types_onehot_test, flesch_train, flesch_test, flesch_kincaid_train, flesch_kincaid_test, gunning_fog_train, gunning_fog_test, coleman_liau_train, coleman_liau_test, dale_chall_train, dale_chall_test, ari_train, ari_test, linsear_write_train, linsear_write_test, spache_train, spache_test = train_test_split(
         train_data['features'], train_data['mask'], train_data['difficulty_labels'], train_data['difficulty_zscore_labels'],
         train_data['difficulty_onehot_labels'], train_data['engaging_labels'], train_data['engaging_zscore_labels'],
         train_data['engaging_onehot_labels'], train_data['subject_ids'], train_data['text_types_str'],
-        train_data['text_types_int'], train_data['text_types_onehot'],
+        train_data['text_types_int'], train_data['text_types_onehot'], train_data['flesch'], train_data['flesch_kincaid'],
+        train_data['gunning_fog'], train_data['coleman_liau'], train_data['dale_chall'], train_data['ari'],
+        train_data['linsear_write'], train_data['spache'],
         test_size=val_size, random_state=0, shuffle=True,
     )
     new_train_data = {
@@ -937,6 +994,14 @@ def split_train_val_bert(
         'text_types_str': text_types_str_train,
         'text_types_int': text_types_int_train,
         'text_types_onehot': text_types_onehot_train,
+        'flesch': flesch_train,
+        'flesch_kincaid': flesch_kincaid_train,
+        'gunning_fog': gunning_fog_train,
+        'coleman_liau': coleman_liau_train,
+        'dale_chall': dale_chall_train,
+        'ari': ari_train,
+        'linsear_write': linsear_write_train,
+        'spache': spache_train,
     }
     val_data = {
         'features': features_test,
@@ -951,6 +1016,14 @@ def split_train_val_bert(
         'text_types_str': text_types_str_test,
         'text_types_int': text_types_int_test,
         'text_types_onehot': text_types_onehot_test,
+        'flesch': flesch_test,
+        'flesch_kincaid': flesch_kincaid_test,
+        'gunning_fog': gunning_fog_test,
+        'coleman_liau': coleman_liau_test,
+        'dale_chall': dale_chall_test,
+        'ari': ari_test,
+        'linsear_write': linsear_write_test,
+        'spache': spache_test,
     }
     return new_train_data, val_data
 
