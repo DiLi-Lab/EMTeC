@@ -713,9 +713,9 @@ def prepare_bert_input(
     spache_scores = list()
 
     subject_ids = list()
-    model = list()
-    decoding_strategy = list()
-    item_id = list()
+    models = list()
+    decoding_strategies = list()
+    item_ids = list()
 
     rms = pd.read_csv(path_to_rms, sep='\t')
     rms_grouped = rms.groupby(['subject_id', 'item_id'])
@@ -796,9 +796,9 @@ def prepare_bert_input(
         spache_scores.append(spache)
 
         subject_ids.append(subject_id)
-        model.append(model)
-        decoding_strategy.append(decoding_strategy)
-        item_id.append(item_id)
+        models.append(model)
+        decoding_strategies.append(decoding_strategy)
+        item_ids.append(item_id)
 
 
 
@@ -828,9 +828,9 @@ def prepare_bert_input(
     linsear_write_scores = np.asarray(linsear_write_scores, dtype=np.float32)
     spache_scores = np.asarray(spache_scores, dtype=np.float32)
     subject_ids = np.array(subject_ids)
-    model = np.array(model)
-    decoding_strategy = np.array(decoding_strategy)
-    item_id = np.array(item_id)
+    models = np.array(models)
+    decoding_strategies = np.array(decoding_strategies)
+    item_ids = np.array(item_ids)
 
     data = {
         'features': features,
@@ -842,9 +842,9 @@ def prepare_bert_input(
         'engaging_zscore_labels': engaging_zscore_labels,
         'engaging_onehot_labels': engaging_onehot_labels,
         'subject_ids': subject_ids,
-        'model': model,
-        'decoding_strategy': decoding_strategy,
-        'item_id': item_id,
+        'model': models,
+        'decoding_strategy': decoding_strategies,
+        'item_id': item_ids,
         'text_types_str': text_types_str,
         'text_types_int': text_types_int,
         'text_types_onehot': text_types_onehot,
