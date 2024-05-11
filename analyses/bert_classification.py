@@ -65,6 +65,7 @@ def main():
 
     path_to_rms = 'data/reading_measures_corrected.csv'
     path_to_ratings = 'data/participant_info/participant_results.csv'
+    path_to_stimuli = 'data/stimuli.csv'
 
     exclude_subjects = ['ET_03', 'ET_11', 'ET_39', 'ET_49', 'ET_67', 'ET_83']
 
@@ -104,6 +105,7 @@ def main():
     data = prepare_bert_input(
         path_to_rms=path_to_rms,
         path_to_ratings=path_to_ratings,
+        path_to_stimuli=path_to_stimuli,
         exclude_subjects=exclude_subjects,
         max_sn_len=config['max_sn_len'],
     )
