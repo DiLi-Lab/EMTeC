@@ -8,13 +8,15 @@ import pandas as pd
 from scipy.stats import zscore
 from typing import Dict, Any
 
-from transformers import BertTokenizerFast
+from transformers import BertTokenizerFast, BertConfig
 from torch.utils.data import Dataset
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
 from sklearn.model_selection import KFold, GroupKFold, train_test_split
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
+
+from transformers.models.bert.modeling_bert import BertEncoder, BertPooler
 
 
 def compute_word_length(arr):
@@ -120,6 +122,10 @@ def prepare_eyettention_input(
 
     subject_ids = list()
 
+    text_types = ['summarization', 'non-fiction', 'poetry', 'words_given', 'article_synopsis', 'fiction']
+    text_type_labels = list()
+    label_to_index = {label: i for i, label in enumerate(text_types)}
+
     # temp_max_sn_len, temp_max_sn_token = 0, 0
     # temp_max_sp_len, temp_max_sp_token = 0, 0
     # all_sn_lens, all_sn_tokens = list(), list()
@@ -147,6 +153,10 @@ def prepare_eyettention_input(
             & (reading_measures['decoding_strategy'] == decoding_strategy)
             & (reading_measures['subject_id'] == subject_id)
             ]
+
+        # get the text type
+        text_type = rms_df['task'].unique().item()
+        text_type_labels.append(label_to_index[text_type])
 
         # get the sentence and word lens
         sn = rms_df['word'].tolist()
@@ -274,6 +284,9 @@ def prepare_eyettention_input(
     ratings_difficulty_one_hot = nn.functional.one_hot(torch.tensor(ratings_difficulty) - 1, num_classes=5)
     ratings_engaging_one_hot = nn.functional.one_hot(torch.tensor(ratings_engaging) - 1, num_classes=5)
 
+    # one-hot encode the text types
+    text_types_one_hot = nn.functional.one_hot(torch.tensor(text_type_labels), num_classes=6)
+
     ratings_difficulty = np.asarray(ratings_difficulty, dtype=np.int64)
     ratings_difficulty_zscore = np.asarray(ratings_difficulty_zscore, dtype=np.float32)
     ratings_engaging = np.asarray(ratings_engaging, dtype=np.int64)
@@ -297,6 +310,8 @@ def prepare_eyettention_input(
         'ratings_engaging_one_hot': ratings_engaging_one_hot,
         'ratings_engaging_zscore': ratings_engaging_zscore,
         'subject_ids': np.array(subject_ids),
+        'text_type_labels': np.array(text_type_labels),
+        'text_type_labels_one_hot': text_types_one_hot,
     }
 
     return data
@@ -329,6 +344,8 @@ class EMTeCDataset(Dataset):
         sample['rating_engaging_one_hot'] = self.data['ratings_engaging_one_hot'][idx, :]
         sample['rating_engaging_zscore'] = self.data['ratings_engaging_zscore'][idx]
         sample['subject_id'] = self.data['subject_ids'][idx]
+        sample['text_type'] = self.data['text_type_labels'][idx]
+        sample['text_type_one_hot'] = self.data['text_type_labels_one_hot'][idx, :]
         return sample
 
 
@@ -452,7 +469,7 @@ def subset_data_kfold(
     return train_data, test_data
 
 
-def split_train_val(
+def split_train_val_eyettention(
         train_data: Dict[str, Any],
         val_size: float = 0.1,
 ):
@@ -462,10 +479,11 @@ def split_train_val(
         :param val_size:
         :return:
     """
-    SN_input_ids_train, SN_input_ids_test, SN_attention_mask_train, SN_attention_mask_test, SN_WORD_len_train, SN_WORD_len_test, WORD_ids_sn_train, WORD_ids_sn_test, SP_input_ids_train, SP_input_ids_test, SP_attention_mask_train, SP_attention_mask_test, WORD_ids_sp_train, WORD_ids_sp_test, SP_ordinal_pos_train, SP_ordinal_pos_test, SP_fix_dur_train, SP_fix_dur_test, SP_len_train, SP_len_test, ratings_difficulty_train, ratings_difficulty_test, ratings_difficulty_one_hot_train, ratings_difficulty_one_hot_test, ratings_difficulty_zscore_train, ratings_difficulty_zscore_test, ratings_engaging_train, ratings_engaging_test, ratings_engaging_one_hot_train, ratings_engaging_one_hot_test, ratings_engaging_zscore_train, ratings_engaging_zscore_test, subject_ids_train, subject_ids_test = train_test_split(
+    SN_input_ids_train, SN_input_ids_test, SN_attention_mask_train, SN_attention_mask_test, SN_WORD_len_train, SN_WORD_len_test, WORD_ids_sn_train, WORD_ids_sn_test, SP_input_ids_train, SP_input_ids_test, SP_attention_mask_train, SP_attention_mask_test, WORD_ids_sp_train, WORD_ids_sp_test, SP_ordinal_pos_train, SP_ordinal_pos_test, SP_fix_dur_train, SP_fix_dur_test, SP_len_train, SP_len_test, ratings_difficulty_train, ratings_difficulty_test, ratings_difficulty_one_hot_train, ratings_difficulty_one_hot_test, ratings_difficulty_zscore_train, ratings_difficulty_zscore_test, ratings_engaging_train, ratings_engaging_test, ratings_engaging_one_hot_train, ratings_engaging_one_hot_test, ratings_engaging_zscore_train, ratings_engaging_zscore_test, subject_ids_train, subject_ids_test, text_type_labels_train, text_type_labels_test, text_type_labels_one_hot_train, text_type_labels_one_hot_test = train_test_split(
         train_data['SN_input_ids'], train_data['SN_attention_mask'], train_data['SN_WORD_len'], train_data['WORD_ids_sn'], train_data['SP_input_ids'], train_data['SP_attention_mask'],
         train_data['WORD_ids_sp'], train_data['SP_ordinal_pos'], train_data['SP_fix_dur'], train_data['SP_len'], train_data['ratings_difficulty'], train_data['ratings_difficulty_one_hot'],
         train_data['ratings_difficulty_zscore'], train_data['ratings_engaging'], train_data['ratings_engaging_one_hot'], train_data['ratings_engaging_zscore'], train_data['subject_ids'],
+        train_data['text_type_labels'], train_data['text_type_labels_one_hot'],
         test_size=val_size, random_state=0, shuffle=True,
     )
     new_train_data = {
@@ -486,6 +504,8 @@ def split_train_val(
         'ratings_engaging_one_hot': ratings_engaging_one_hot_train,
         'ratings_engaging_zscore': ratings_engaging_zscore_train,
         'subject_ids': subject_ids_train,
+        'text_type_labels': text_type_labels_train,
+        'text_type_labels_one_hot': text_type_labels_one_hot_train,
     }
     val_data = {
         'SN_input_ids': SN_input_ids_test,
@@ -505,6 +525,8 @@ def split_train_val(
         'ratings_engaging_one_hot': ratings_engaging_one_hot_test,
         'ratings_engaging_zscore': ratings_engaging_zscore_test,
         'subject_ids': subject_ids_test,
+        'text_type_labels': text_type_labels_test,
+        'text_type_labels_one_hot': text_type_labels_one_hot_test,
     }
     return new_train_data, val_data
 
@@ -513,9 +535,424 @@ def gradient_clipping(model, clip: int = 10):
     nn.utils.clip_grad_norm_(model.parameters(), clip)
 
 
+def prepare_kan_input(
+        path_to_rms: str,
+        path_to_ratings: str,
+        exclude_subjects: List[str],
+):
+    features = [
+        'FFD', 'SFD', 'FD', 'FPRT', 'FRT', 'TFT', 'RRT',
+        'RPD_inc', 'RPD_exc', 'RBRT', 'Fix', 'FPF', 'RR', 'FPReg', 'TRC_out',
+        'TRC_in', 'SL_in', 'SL_out', 'TFC', 'n_dep_left', 'n_dep_right', 'distance_to_head',
+        'word_length_without_punct', 'word_freq', 'zipf_freq', 'surprisal_gpt2',
+    ]
+    data_dict = {
+        'features': list(),
+        'difficulty': list(),
+        'engaging': list(),
+        'subject_id': list(),
+        'difficulty_zscore': list(),
+        'engaging_zscore': list(),
+    }
+    rms = pd.read_csv(path_to_rms, sep='\t')
+    rms_grouped = rms.groupby(['subject_id', 'item_id'])
+    rms_list = list()
+    for name, group in rms_grouped:
+        rms_list.append(group)
+
+    results = pd.read_csv(path_to_ratings, sep='\t')
+    ratings_dfs = dict()
+    grouped_ratings = results.groupby('subject_id')
+    for name, group in grouped_ratings:
+        if name in exclude_subjects:
+            continue
+        group['RATING_DIFFICULTY_VALUE_zscore'] = zscore(group['RATING_DIFFICULTY_VALUE'])
+        group['RATING_ENGAGING_VALUE_zscore'] = zscore(group['RATING_ENGAGING_VALUE'])
+        ratings_dfs[name] = group
+
+    for text_df_idx, text_df in enumerate(rms_list):
+        print(f'--- preparing text {text_df_idx}')
+        subject_id = text_df['subject_id'].unique().item()
+        item_id = text_df['item_id'].unique().item()
+        if subject_id in exclude_subjects:
+            continue
+        feature_vector = list()
+        for feature in features:
+            feature_vector.append(text_df[feature].mean())
+            feature_vector.append(text_df[feature].std())
+            feature_vector.append(text_df[feature].median())
+        difficulty = ratings_dfs[subject_id].loc[ratings_dfs[subject_id]['item_id'] == item_id][
+            'RATING_DIFFICULTY_VALUE'].item()
+        difficulty_zscore = ratings_dfs[subject_id].loc[ratings_dfs[subject_id]['item_id'] == item_id][
+            'RATING_DIFFICULTY_VALUE_zscore'].item()
+        engaging = ratings_dfs[subject_id].loc[ratings_dfs[subject_id]['item_id'] == item_id]['RATING_ENGAGING_VALUE'].item()
+        engaging_zscore = ratings_dfs[subject_id].loc[ratings_dfs[subject_id]['item_id'] == item_id][
+            'RATING_ENGAGING_VALUE_zscore'].item()
+        data_dict['features'].append(feature_vector)
+        data_dict['difficulty'].append(difficulty)
+        data_dict['engaging'].append(engaging)
+        data_dict['subject_id'].append(subject_id)
+        data_dict['difficulty_zscore'].append(difficulty_zscore)
+        data_dict['engaging_zscore'].append(engaging_zscore)
+
+    # data_dict['features'] = torch.tensor(data_dict['features'])
+    # data_dict['difficulty'] = torch.tensor(data_dict['difficulty'])
+    # data_dict['engaging'] = torch.tensor(data_dict['engaging'])
+    # data_dict['difficulty_zscore'] = torch.tensor(data_dict['difficulty_zscore'])
+    # data_dict['engaging_zscore'] = torch.tensor(data_dict['engaging_zscore'])
+
+    return data_dict
 
 
+def kan_train_test_split(
+        data: Dict[str, torch.tensor],
+        label: str,
+        device: str,
+        task: str,
+        test_size: float = 0.2,
+):
+    features_train, features_test, difficulty_train, difficulty_test, engaging_train, engaging_test, difficulty_zscore_train, difficulty_zscore_test, engaging_zscore_train, engaging_zscore_test = train_test_split(
+        data['features'], data['difficulty'], data['engaging'], data['difficulty_zscore'], data['engaging_zscore'],
+        test_size=test_size, random_state=0, shuffle=True,
+    )
+    kan_data = dict()
 
+    # kan_data['train_input'] = torch.tensor(features_train).double()
+    # kan_data['test_input'] = torch.tensor(features_test).double()
+    #
+    # if label == 'difficulty':
+    #     kan_data['train_label'] = torch.tensor(difficulty_train).double()
+    #     kan_data['test_label'] = torch.tensor(difficulty_test).double()
+    # elif label == 'engaging':
+    #     kan_data['train_label'] = torch.tensor(engaging_train).double()
+    #     kan_data['test_label'] = torch.tensor(engaging_test).double()
+    # elif label == 'difficulty_zscore':
+    #     kan_data['train_label'] = torch.tensor(difficulty_zscore_train).double()
+    #     kan_data['test_label'] = torch.tensor(difficulty_zscore_test).double()
+    # elif label == 'engaging_zscore':
+    #     kan_data['train_label'] = torch.tensor(engaging_zscore_train).double()
+    #     kan_data['test_label'] = torch.tensor(engaging_zscore_test).double()
+    # else:
+    #     raise NotImplementedError
+
+    if task == 'classification':
+        dtype = torch.long
+    else:
+        dtype = torch.float32
+
+    kan_data['train_input'] = torch.tensor(features_train).to(torch.float32).to(device)
+    kan_data['test_input'] = torch.tensor(features_test).to(torch.float32).to(device)
+
+    if label == 'difficulty':
+        kan_data['train_label'] = (torch.tensor(difficulty_train) - 1).to(dtype).to(device)
+        kan_data['test_label'] = (torch.tensor(difficulty_test) - 1).to(dtype).to(device)
+    elif label == 'engaging':
+        kan_data['train_label'] = (torch.tensor(engaging_train) - 1).to(dtype).to(device)
+        kan_data['test_label'] = (torch.tensor(engaging_test) - 1).to(dtype).to(device)
+    elif label == 'difficulty_zscore':
+        kan_data['train_label'] = torch.tensor(difficulty_zscore_train).to(torch.float32).to(device)
+        kan_data['test_label'] = torch.tensor(difficulty_zscore_test).to(torch.float32).to(device)
+    elif label == 'engaging_zscore':
+        kan_data['train_label'] = torch.tensor(engaging_zscore_train).to(torch.float32).to(device)
+        kan_data['test_label'] = torch.tensor(engaging_zscore_test).to(torch.float32).to(device)
+    else:
+        raise NotImplementedError
+
+    return kan_data
+
+
+def prepare_bert_input(
+        path_to_rms: str,
+        path_to_ratings: str,
+        exclude_subjects: List[str],
+        max_sn_len: int,
+):
+    """
+
+    :param path_to_rms:
+    :param path_to_ratings:
+    :param exclude_subjects:
+    :return:
+    """
+    text_types = ['summarization', 'non-fiction', 'poetry', 'words_given', 'article_synopsis', 'fiction']
+    label_to_index = {label: i for i, label in enumerate(text_types)}
+
+    feature_names = [
+        'FFD', 'SFD', 'FD', 'FPRT', 'FRT', 'TFT', 'RRT',
+        'RPD_inc', 'RPD_exc', 'RBRT', 'Fix', 'FPF', 'RR', 'FPReg', 'TRC_out',
+        'TRC_in', 'SL_in', 'SL_out', 'TFC', 'n_dep_left', 'n_dep_right', 'distance_to_head',
+        'word_length_without_punct', 'word_freq', 'zipf_freq', 'surprisal_gpt2',
+    ]
+    feature_names = [
+        'FFD', 'SFD', 'FD', 'FPRT', 'FRT', 'TFT', 'RRT',
+        'RPD_inc', 'RPD_exc', 'RBRT',
+        #'Fix', 'FPF',
+        'RR', 'FPReg', 'TRC_out',
+        'TRC_in', 'SL_in', 'SL_out', 'TFC', 'n_dep_left', 'n_dep_right', 'distance_to_head',
+        'word_length_without_punct', 'word_freq', 'zipf_freq', 'surprisal_gpt2',
+    ]
+    data_dict = {
+        'features': list(),
+        'difficulty': list(),
+        'engaging': list(),
+        'subject_id': list(),
+        'difficulty_zscore': list(),
+        'engaging_zscore': list(),
+        'subject_ids': list(),
+        'text_type': list(),
+    }
+
+    features = list()
+    difficulty_labels = list()
+    difficulty_zscore_labels = list()
+    engaging_labels = list()
+    engaging_zscore_labels = list()
+    subject_ids = list()
+    text_types_int = list()
+    text_types_str = list()
+
+    rms = pd.read_csv(path_to_rms, sep='\t')
+    rms_grouped = rms.groupby(['subject_id', 'item_id'])
+    rms_list = list()
+    for name, group in rms_grouped:
+        rms_list.append(group)
+
+    results = pd.read_csv(path_to_ratings, sep='\t')
+    ratings_dfs = dict()
+    grouped_ratings = results.groupby('subject_id')
+    for name, group in grouped_ratings:
+        if name in exclude_subjects:
+            continue
+        group['RATING_DIFFICULTY_VALUE_zscore'] = zscore(group['RATING_DIFFICULTY_VALUE'])
+        group['RATING_ENGAGING_VALUE_zscore'] = zscore(group['RATING_ENGAGING_VALUE'])
+        ratings_dfs[name] = group
+
+    for text_df_idx, text_df in enumerate(rms_list):
+        print(f'--- preparing text {text_df_idx}')
+        subject_id = text_df['subject_id'].unique().item()
+        item_id = text_df['item_id'].unique().item()
+        text_type_str = text_df['task'].unique().item()
+        text_type_int = label_to_index[text_type_str]
+        if subject_id in exclude_subjects:
+            continue
+
+        # list to hold the individual word-level lists
+        feature_matrix = list()
+        for idx, row in text_df.iterrows():
+            # list that holds the word-level values
+            feature_vector = list()
+            for feature in feature_names:
+                feature_vector.append(row[feature])
+            feature_matrix.append(feature_vector)
+
+        difficulty = ratings_dfs[subject_id].loc[ratings_dfs[subject_id]['item_id'] == item_id][
+            'RATING_DIFFICULTY_VALUE'].item()
+        difficulty_zscore = ratings_dfs[subject_id].loc[ratings_dfs[subject_id]['item_id'] == item_id][
+            'RATING_DIFFICULTY_VALUE_zscore'].item()
+        engaging = ratings_dfs[subject_id].loc[ratings_dfs[subject_id]['item_id'] == item_id][
+            'RATING_ENGAGING_VALUE'].item()
+        engaging_zscore = ratings_dfs[subject_id].loc[ratings_dfs[subject_id]['item_id'] == item_id][
+            'RATING_ENGAGING_VALUE_zscore'].item()
+
+        features.append(feature_matrix)
+        difficulty_labels.append(difficulty)
+        difficulty_zscore_labels.append(difficulty_zscore)
+        engaging_labels.append(engaging)
+        engaging_zscore_labels.append(engaging_zscore)
+        subject_ids.append(subject_id)
+        text_types_str.append(text_type_str)
+        text_types_int.append(text_type_int)
+
+
+    # one-hot encoding
+    difficulty_onehot_labels = nn.functional.one_hot(torch.tensor(difficulty_labels) - 1, num_classes=5)
+    engaging_onehot_labels = nn.functional.one_hot(torch.tensor(engaging_labels) - 1, num_classes=5)
+    text_types_onehot = nn.functional.one_hot(torch.tensor(text_types_int), num_classes=6)
+
+    # pad the features
+    features, mask = pad_bert_features_input(
+        features=features,
+        max_sn_len=max_sn_len,
+    )
+
+    difficulty_labels = np.asarray(difficulty_labels, dtype=np.int64)
+    difficulty_zscore_labels = np.asarray(difficulty_zscore_labels, dtype=np.float32)
+    engaging_labels = np.asarray(engaging_labels, dtype=np.int64)
+    engaging_zscore_labels = np.asarray(engaging_zscore_labels, dtype=np.float32)
+    subject_ids = np.array(subject_ids)
+    text_types_str = np.array(text_types_str)
+    text_types_int = np.asarray(text_types_int, dtype=np.int64)
+
+    data = {
+        'features': features,
+        'mask': mask,
+        'difficulty_labels': difficulty_labels,
+        'difficulty_zscore_labels': difficulty_zscore_labels,
+        'difficulty_onehot_labels': difficulty_onehot_labels,
+        'engaging_labels': engaging_labels,
+        'engaging_zscore_labels': engaging_zscore_labels,
+        'engaging_onehot_labels': engaging_onehot_labels,
+        'subject_ids': subject_ids,
+        'text_types_str': text_types_str,
+        'text_types_int': text_types_int,
+        'text_types_onehot': text_types_onehot,
+    }
+
+    return data
+
+
+class EMTeCBert(Dataset):
+
+    def __init__(self, data: Dict[str, Any]):
+        self.data = data
+
+    def __len__(self):
+        return len(self.data['features'])
+
+    def __getitem__(self, idx):
+        sample = {}
+        sample['features'] = self.data['features'][idx, :]
+        sample['mask'] = self.data['mask'][idx, :]
+        sample['difficulty_labels'] = self.data['difficulty_labels'][idx]
+        sample['difficulty_zscore_labels'] = self.data['difficulty_zscore_labels'][idx]
+        sample['difficulty_onehot_labels'] = self.data['difficulty_onehot_labels'][idx, :]
+        sample['engaging_labels'] = self.data['engaging_labels'][idx]
+        sample['engaging_zscore_labels'] = self.data['engaging_zscore_labels'][idx]
+        sample['engaging_onehot_labels'] = self.data['engaging_onehot_labels'][idx, :]
+        sample['subject_ids'] = self.data['subject_ids'][idx]
+        sample['text_types_str'] = self.data['text_types_str'][idx]
+        sample['text_types_int'] = self.data['text_types_int'][idx]
+        sample['text_types_onehot'] = self.data['text_types_onehot'][idx, :]
+        return sample
+
+
+def pad_bert_features_input(
+        features: List[list[int]],
+        max_sn_len: int,
+):
+    features_tensors = torch.tensor
+    mask = torch.tensor
+    for idx, feature_matrix in enumerate(features):
+
+        feature_matrix = torch.tensor(feature_matrix)
+        feature_len = feature_matrix.shape[0]
+        pad_len = max_sn_len - feature_len
+
+        # create attention mask
+        mask_ones = torch.ones(1, feature_len)
+        mask_zeros = torch.zeros(1, pad_len)
+        mask_complete = torch.cat((mask_ones, mask_zeros), dim=1)
+
+        # create padding
+        padding_shape = (pad_len, feature_matrix.shape[1])
+        padding = torch.full(padding_shape, -1)
+
+        # concatenate features and padding
+        padded_features = torch.cat((feature_matrix, padding), dim=0)
+
+        if idx == 0:
+            features_tensors = padded_features
+            mask = mask_complete.squeeze()
+        elif idx == 1:
+            features_tensors = torch.stack((features_tensors, padded_features), dim=0)
+            mask = torch.stack((mask, mask_complete.squeeze()), dim=0)
+        else:
+            features_tensors = torch.cat((features_tensors, padded_features.unsqueeze(0)), dim=0)
+            mask = torch.cat((mask, mask_complete), dim=0)
+
+
+    return features_tensors, mask
+
+
+class TransformerModel(nn.Module):
+
+    def __init__(
+            self,
+            num_classes: int,
+    ):
+        super().__init__()
+        self.num_classes = num_classes
+
+        bert_config = BertConfig.from_pretrained('bert-base-cased')
+        # we have 24 input features
+        bert_config.hidden_size = 24
+
+        self.bert = BertEncoder(bert_config)
+        self.pooler = BertPooler(bert_config)
+        self.dropout = nn.Dropout(bert_config.hidden_dropout_prob)
+        self.linear = nn.Linear(bert_config.hidden_size, self.num_classes)
+
+    def forward(self, features, attention_mask):
+
+
+        attention_mask = self._prepare_attention_mask(attention_mask=attention_mask)
+        output = self.bert(hidden_states=features, attention_mask=attention_mask).last_hidden_state
+        output = self.pooler(output)
+        output = self.dropout(output)
+        output = self.linear(output)
+
+        return output
+
+    def _prepare_attention_mask(self, attention_mask):
+        # the input attention mask is of shape [batch size, hidden]
+        extended_attention_mask = attention_mask[:, None, None, :]
+        # since the attentoin mask is 1 for positions we want to attend to and 0 for maked positions,
+        # this operation will create a tensor which is 0 for positions we want to attend and the dtype's
+        # smallest value for masked positions.
+        # since we are adding it to the raw scores before the softmax, this is the same as
+        # removing these entirely.
+        dtype = torch.float32
+        extended_attention_mask = extended_attention_mask.to(dtype=dtype)
+        extended_attention_mask = (1.0 - extended_attention_mask) * torch.finfo(dtype).min
+        return extended_attention_mask
+
+
+def split_train_val_bert(
+        train_data: Dict[str, Any],
+        val_size: float = 0.1,
+):
+    """
+
+    :param train_data:
+    :param val_size:
+    :return:
+    """
+    features_train, features_test, mask_train, mask_test, difficulty_labels_train, difficulty_labels_test, difficulty_zscore_labels_train, difficulty_zscore_labels_test, difficulty_onehot_labels_train, difficulty_onehot_labels_test, engaging_labels_train, engaging_labels_test, engaging_zscore_labels_train, engaging_zscore_labels_test, engaging_onehot_labels_train, engaging_onehot_labels_test, subject_ids_train, subject_ids_test, text_types_str_train, text_types_str_test, text_types_int_train, text_types_int_test, text_types_onehot_train, text_types_onehot_test = train_test_split(
+        train_data['features'], train_data['mask'], train_data['difficulty_labels'], train_data['difficulty_zscore_labels'],
+        train_data['difficulty_onehot_labels'], train_data['engaging_labels'], train_data['engaging_zscore_labels'],
+        train_data['engaging_onehot_labels'], train_data['subject_ids'], train_data['text_types_str'],
+        train_data['text_types_int'], train_data['text_types_onehot'],
+        test_size=val_size, random_state=0, shuffle=True,
+    )
+    new_train_data = {
+        'features': features_train,
+        'mask': mask_train,
+        'difficulty_labels': difficulty_labels_train,
+        'difficulty_zscore_labels': difficulty_zscore_labels_train,
+        'difficulty_onehot_labels': difficulty_onehot_labels_train,
+        'engaging_labels': engaging_labels_train,
+        'engaging_zscore_labels': engaging_zscore_labels_train,
+        'engaging_onehot_labels': engaging_onehot_labels_train,
+        'subject_ids': subject_ids_train,
+        'text_types_str': text_types_str_train,
+        'text_types_int': text_types_int_train,
+        'text_types_onehot': text_types_onehot_train,
+    }
+    val_data = {
+        'features': features_test,
+        'mask': mask_test,
+        'difficulty_labels': difficulty_labels_test,
+        'difficulty_zscore_labels': difficulty_zscore_labels_test,
+        'difficulty_onehot_labels': difficulty_onehot_labels_test,
+        'engaging_labels': engaging_labels_test,
+        'engaging_zscore_labels': engaging_zscore_labels_test,
+        'engaging_onehot_labels': engaging_onehot_labels_test,
+        'subject_ids': subject_ids_test,
+        'text_types_str': text_types_str_test,
+        'text_types_int': text_types_int_test,
+        'text_types_onehot': text_types_onehot_test,
+    }
+    return new_train_data, val_data
 
 
 
