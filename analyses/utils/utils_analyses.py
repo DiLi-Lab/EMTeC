@@ -751,7 +751,7 @@ def prepare_bert_input(
         flesch = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['flesch'].item()
         flesch_kincaid = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['flesch_kincaid'].item()
         gunning_fog = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['gunning_fog'].item()
-        coleman_liau = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['coleman_liau'].item
+        coleman_liau = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['coleman_liau'].item()
         dale_chall = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['dale_chall'].item()
         ari = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['ari'].item()
         linsear_write = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (stimuli['decoding_strategy'] == decoding_strategy)]['linsear_write'].item()
