@@ -337,20 +337,29 @@ def main():
                         test_outputs.append(o.item())
 
                 # add all meta information to list
-                model = batch['model']
+                model_name = batch['model']
                 decoding_strategy = batch['decoding_strategy']
                 item_id = batch['item_id']
-                flesch = batch['flesch']
-                flesch_kincaid = batch['flesch_kincaid']
-                gunning_fog = batch['gunning_fog']
-                coleman_liau = batch['coleman_liau']
-                dale_chall = batch['dale_chall']
-                ari = batch['ari']
-                linsear_write = batch['linsear_write']
-                spache = batch['spache']
+                flesch = batch['flesch'].tolist()
+                flesch_kincaid = batch['flesch_kincaid'].tolist()
+                gunning_fog = batch['gunning_fog'].tolist()
+                coleman_liau = batch['coleman_liau'].tolist()
+                dale_chall = batch['dale_chall'].tolist()
+                ari = batch['ari'].tolist()
+                linsear_write = batch['linsear_write'].tolist()
+                spache = batch['spache'].tolist()
 
-
-
+                models.extend(model_name)
+                decoding_strategies.extend(decoding_strategy)
+                item_ids.extend(item_id)
+                flesch_scores.extend(flesch)
+                flesch_kincaid_scores.extend(flesch_kincaid)
+                gunning_fog_scores.extend(gunning_fog)
+                coleman_liau_scores.extend(coleman_liau)
+                dale_chall_scores.extend(dale_chall)
+                ari_scores.extend(ari)
+                linsear_write_scores.extend(linsear_write)
+                spache_scores.extend(spache)
 
 
         if task == 'classification':
