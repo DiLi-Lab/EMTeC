@@ -321,7 +321,7 @@ def main():
 
 
         if task == 'classification':
-            breakpoint()
+
             # flatten the array of test outputs from [n batches, batch size, n classes] into [n samples, n classes]
             all_test_outputs_flattened = np.concatenate(test_outputs, axis=0)
             # convert the logits into probabilities
