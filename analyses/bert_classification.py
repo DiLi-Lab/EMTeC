@@ -296,6 +296,10 @@ def main():
         model.to(device)
         model.eval()
         test_outputs, test_labels, test_labels_onehot = list(), list(), list()
+        models, decoding_strategies, item_ids = list(), list(), list()
+        flesch_scores, flesch_kincaid_scores, gunning_fog_scores = list(), list(), list()
+        coleman_liau_scores, dale_chall_scores, ari_scores = list(), list(), list()
+        linsear_write_scores, spache_scores = list(), list()
 
         for batch_idx, batch in enumerate(test_dataloader):
 
@@ -305,9 +309,11 @@ def main():
 
             with torch.no_grad():
                 print(f'--- fold {fold_idx} testing batch {batch_idx}')
+
                 features = batch['features'].to(device)
                 mask = batch['mask'].to(device)
                 labels = batch[label_key].to(device)
+
                 out = model(
                     features=features,
                     attention_mask=mask,
@@ -329,6 +335,21 @@ def main():
                         test_labels.append(l.item())
                     for o in out.squeeze(1):
                         test_outputs.append(o.item())
+
+                # add all meta information to list
+                model = batch['model']
+                decoding_strategy = batch['decoding_strategy']
+                item_id = batch['item_id']
+                flesch = batch['flesch']
+                flesch_kincaid = batch['flesch_kincaid']
+                gunning_fog = batch['gunning_fog']
+                coleman_liau = batch['coleman_liau']
+                dale_chall = batch['dale_chall']
+                ari = batch['ari']
+                linsear_write = batch['linsear_write']
+                spache = batch['spache']
+
+
 
 
 
@@ -371,6 +392,20 @@ def main():
             # predicted_classes = torch.argmax(probabilities, dim=1)
             # for pred_class in predicted_classes:
             #     stats_dict['pred_test_labels_classification'].append(pred_class)
+
+        # add all metadata to stats dict
+        stats_dict['model'] = models
+        stats_dict['decoding_strategy'] = decoding_strategies
+        stats_dict['item_id'] = item_ids
+        stats_dict['flesch'] = flesch_scores
+        stats_dict['flesch_kincaid'] = flesch_kincaid_scores
+        stats_dict['gunning_fog'] = gunning_fog_scores
+        stats_dict['coleman_liau'] = coleman_liau_scores
+        stats_dict['dale_chall'] = dale_chall_scores
+        stats_dict['ari'] = ari_scores
+        stats_dict['linsear_write'] = linsear_write_scores
+        stats_dict['spache'] = spache_scores
+
 
     # save config
     with open(os.path.join(model_savepath, 'config.pickle'), 'wb') as handle:
