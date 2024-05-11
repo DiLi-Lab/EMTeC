@@ -775,9 +775,9 @@ def prepare_bert_input(
         max_sn_len=max_sn_len,
     )
 
-    difficulty_labels = np.asarray(difficulty_labels, dtype=np.int64)
+    difficulty_labels = np.asarray(difficulty_labels, dtype=np.int64) - 1
     difficulty_zscore_labels = np.asarray(difficulty_zscore_labels, dtype=np.float32)
-    engaging_labels = np.asarray(engaging_labels, dtype=np.int64)
+    engaging_labels = np.asarray(engaging_labels, dtype=np.int64) - 1
     engaging_zscore_labels = np.asarray(engaging_zscore_labels, dtype=np.float32)
     subject_ids = np.array(subject_ids)
     text_types_str = np.array(text_types_str)
