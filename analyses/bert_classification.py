@@ -211,16 +211,10 @@ def main():
         for epoch in range(config['n_epochs']):
             model.train()
 
-            # TODO remove break
-            if epoch == 2:
-                break
-
             print(model_savepath)
 
             for batch_idx, batch in enumerate(train_dataloader):
 
-                # if batch_idx == 2:
-                #     break
 
                 print(f'--- fold {fold_idx} training epoch {epoch} batch {batch_idx}', end='\t')
 
@@ -249,15 +243,11 @@ def main():
                 av_score.append(loss.to('cpu').detach().numpy())
                 print(f'error: {loss.to("cpu").detach().numpy()}')
 
-                stats_dict['train_loss'].append(loss.to('cpu').detach().numpy())
+                stats_dict['train_loss'].append(loss.to('cpu').detach().numpy().item())
 
             val_loss = list()
             model.eval()
             for batch_idx, batch in enumerate(val_dataloader):
-
-                # TODO remove break
-                if batch_idx == 2:
-                    break
 
                 print(f'--- fold {fold_idx} validation epoch {epoch} batch {batch_idx}')
                 with torch.no_grad():
@@ -274,7 +264,7 @@ def main():
                     else:
                         loss = loss_fn(out, labels)
                     val_loss.append(loss.to('cpu').detach().numpy())
-                    stats_dict['val_loss'].append(loss.to('cpu').detach().numpy())
+                    stats_dict['val_loss'].append(loss.to('cpu').detach().numpy().item())
 
             # check if early stopping should be applied
             if np.mean(val_loss) < old_score:
@@ -303,10 +293,6 @@ def main():
 
         for batch_idx, batch in enumerate(test_dataloader):
 
-            # TODO remove break
-            # if batch_idx == 2:
-            #     break
-
             with torch.no_grad():
                 print(f'--- fold {fold_idx} testing batch {batch_idx}')
 
@@ -323,7 +309,7 @@ def main():
                     loss = loss_fn(out.squeeze(), labels)
                 else:
                     loss = loss_fn(out, labels)
-                stats_dict['test_loss'].append(loss.to('cpu').detach().numpy())
+                stats_dict['test_loss'].append(loss.to('cpu').detach().numpy().item())
 
                 if task == 'classification':
                     test_outputs.append(out.to('cpu').detach().numpy())
@@ -414,6 +400,10 @@ def main():
         stats_dict['ari'] = ari_scores
         stats_dict['linsear_write'] = linsear_write_scores
         stats_dict['spache'] = spache_scores
+
+        # save results
+        with open(os.path.join(model_savepath, f'model-results-fold{fold_idx}.pickle'), 'wb') as handle:
+            pickle.dump(stats_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
     # save config
