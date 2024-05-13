@@ -48,6 +48,18 @@ def get_parser() -> ArgumentParser:
         action='store_true',
         help='Whether we use the labels as they are or whether they are z-score normalized.',
     )
+    parser.add_argument(
+        '--base-save-dir',
+        default='bert_classification',
+        type=str,
+        help='The name of the base directory to save the models in for the transformer classification.',
+    )
+    parser.add_argument(
+        '--zscore',
+        default=False,
+        action='store_true',
+        help='Whether to z-score the input features or not.',
+    )
     return parser
 
 
@@ -96,8 +108,10 @@ def main():
     }
 
     # save paths
-    model_save_basepath = '/srv/scratch1/bolliger/EMTeC/analyses/bert_classification'
-    model_name = f'{args.target}-{args.split}-{args.bsz}-{args.normalized}'
+    model_save_basepath = f'/srv/scratch1/bolliger/EMTeC/analyses/{args.base_save_dir}'
+    if not os.path.exists(model_save_basepath):
+        os.makedirs(model_save_basepath)
+    model_name = f'{args.target}-{args.split}-{args.bsz}-{args.normalized}-{args.zscore}'
     model_savepath = os.path.join(model_save_basepath, model_name)
     if not os.path.exists(model_savepath):
         os.makedirs(model_savepath)
@@ -174,6 +188,8 @@ def main():
         train_data, val_data = split_train_val_bert(
             train_data=train_data,
         )
+
+        breakpoint()
 
         # wrap in dataset class
         train_dataset = EMTeCBert(data=train_data)
