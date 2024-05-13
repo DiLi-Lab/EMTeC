@@ -106,6 +106,7 @@ def main():
         'target': args.target,
         'normalized': args.normalized,
         'max_grad_norm': 10,
+        'zscore_features': args.zscore,
     }
 
     # features that are used as predictors
@@ -203,18 +204,19 @@ def main():
 
         breakpoint()
 
-        # standardize the features
-        train_features_standardized, scalers = standardize_train_features(
-            features=train_data['features'],
-            feature_names=feature_names,
-        )
-        test_features_standardized = standardize_test_features(
-            features=test_data['features'],
-            scalers=scalers,
-            feature_names=feature_names,
-        )
-        train_data['features'] = train_features_standardized
-        test_data['features'] = test_features_standardized
+        if args.zscore:
+            # standardize the features
+            train_features_standardized, scalers = standardize_train_features(
+                features=train_data['features'],
+                feature_names=feature_names,
+            )
+            test_features_standardized = standardize_test_features(
+                features=test_data['features'],
+                scalers=scalers,
+                feature_names=feature_names,
+            )
+            train_data['features'] = train_features_standardized
+            test_data['features'] = test_features_standardized
 
         # wrap in dataset class
         train_dataset = EMTeCBert(data=train_data)
