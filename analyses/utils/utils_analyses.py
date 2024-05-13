@@ -1071,7 +1071,7 @@ def standardize_train_features(
         # we don't z-score transform the binary features
         if feature_name in ['RR', 'FPReg']:
             scalers[feature_name] = None
-            standardized_features.append(feature)
+            standardized_features.append(feature.unsqueeze(-1))
             continue
 
         # create a mask that masks all -1 (padding tokens)
