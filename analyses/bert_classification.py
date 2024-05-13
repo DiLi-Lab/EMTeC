@@ -12,6 +12,7 @@ from transformers.models.bert.modeling_bert import BertEncoder, BertPooler
 from analyses.utils.utils_analyses import prepare_bert_input, EMTeCBert, TransformerModel
 from analyses.utils.utils_analyses import get_kfold, subset_data_kfold, split_train_val_bert
 from analyses.utils.utils_analyses import gradient_clipping
+from analyses.utils.utils_analyses import standardize_train_features, standardize_test_features
 from torch.utils.data import DataLoader
 import torch.nn as nn
 from argparse import ArgumentParser
@@ -107,6 +108,16 @@ def main():
         'max_grad_norm': 10,
     }
 
+    # features that are used as predictors
+    feature_names = [
+        'FFD', 'SFD', 'FD', 'FPRT', 'FRT', 'TFT', 'RRT',
+        'RPD_inc', 'RPD_exc', 'RBRT',
+        # 'Fix', 'FPF',
+        'RR', 'FPReg', 'TRC_out',
+        'TRC_in', 'SL_in', 'SL_out', 'TFC', 'n_dep_left', 'n_dep_right', 'distance_to_head',
+        'word_length_without_punct', 'word_freq', 'zipf_freq', 'surprisal_gpt2',
+    ]
+
     # save paths
     model_save_basepath = f'/srv/scratch1/bolliger/EMTeC/analyses/{args.base_save_dir}'
     if not os.path.exists(model_save_basepath):
@@ -120,6 +131,7 @@ def main():
         path_to_rms=path_to_rms,
         path_to_ratings=path_to_ratings,
         path_to_stimuli=path_to_stimuli,
+        feature_names=feature_names,
         exclude_subjects=exclude_subjects,
         max_sn_len=config['max_sn_len'],
     )
@@ -190,6 +202,19 @@ def main():
         )
 
         breakpoint()
+
+        # standardize the features
+        train_features_standardized, scalers = standardize_train_features(
+            features=train_data['features'],
+            feature_names=feature_names,
+        )
+        test_features_standardized = standardize_test_features(
+            features=test_data['features'],
+            scalers=scalers,
+            feature_names=feature_names,
+        )
+        train_data['features'] = train_features_standardized
+        test_data['features'] = test_features_standardized
 
         # wrap in dataset class
         train_dataset = EMTeCBert(data=train_data)
