@@ -14,6 +14,7 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 from sklearn.model_selection import KFold, GroupKFold, train_test_split
+from sklearn.preprocessing import StandardScaler
 from typing import Optional, Dict, Any, List
 
 from transformers.models.bert.modeling_bert import BertEncoder, BertPooler
@@ -665,6 +666,7 @@ def prepare_bert_input(
         path_to_rms: str,
         path_to_ratings: str,
         path_to_stimuli: str,
+        feature_names: List[str],
         exclude_subjects: List[str],
         max_sn_len: int,
 ):
@@ -672,7 +674,10 @@ def prepare_bert_input(
 
     :param path_to_rms:
     :param path_to_ratings:
+    :param path_to_stimuli:
+    :param feature_names:
     :param exclude_subjects:
+    :param max_sn_len:
     :return:
     """
     text_types = ['summarization', 'non-fiction', 'poetry', 'words_given', 'article_synopsis', 'fiction']
@@ -684,14 +689,7 @@ def prepare_bert_input(
     #     'TRC_in', 'SL_in', 'SL_out', 'TFC', 'n_dep_left', 'n_dep_right', 'distance_to_head',
     #     'word_length_without_punct', 'word_freq', 'zipf_freq', 'surprisal_gpt2',
     # ]
-    feature_names = [
-        'FFD', 'SFD', 'FD', 'FPRT', 'FRT', 'TFT', 'RRT',
-        'RPD_inc', 'RPD_exc', 'RBRT',
-        #'Fix', 'FPF',
-        'RR', 'FPReg', 'TRC_out',
-        'TRC_in', 'SL_in', 'SL_out', 'TFC', 'n_dep_left', 'n_dep_right', 'distance_to_head',
-        'word_length_without_punct', 'word_freq', 'zipf_freq', 'surprisal_gpt2',
-    ]
+
     readability_metrics = ['flesch', 'flesch_kincaid', 'gunning_fog', 'coleman_liau', 'dale_chall', 'ari',
                            'linsear_write', 'spache']
 
@@ -1050,6 +1048,104 @@ def split_train_val_bert(
         'spache': spache_test,
     }
     return new_train_data, val_data
+
+
+def standardize_train_features(
+        features: torch.tensor,
+        feature_names: List[str],
+):
+    """
+    Standardize each feature individually.
+    """
+
+    batch_size, seq_length, num_features = features.shape
+    standardized_features = list()
+    scalers = dict()
+
+
+    for i, feature_name in enumerate(feature_names):
+
+        # extract the feature dimension; shape [batch size, text length, 1]
+        feature = features[:, :, i]
+
+        # we don't z-score transform the binary features
+        if feature_name in ['RR', 'FPReg']:
+            scalers[feature_name] = None
+            standardized_features.append(feature)
+            continue
+
+        # create a mask that masks all -1 (padding tokens)
+        mask = torch.any(feature[..., None] == torch.tensor(-1), dim=-1)
+
+        # replace all -1 values with nan such that they don't influence the z-score transformation
+        feature = torch.where(mask, torch.tensor(float('nan')), feature)
+
+        # reshape the feature into [batch size x text length, 1]
+        feature = feature.view(-1, 1)
+
+        # fit the scaler and save it to be later used on the test set
+        scaler = StandardScaler()
+        scaler.fit(feature)
+        scalers[feature_name] = scaler
+
+        # transform the features and bring it back into shape [batch size, seq len, 1]
+        feature = scaler.transform(feature).reshape(batch_size, seq_length, 1)
+        # back to tensor
+        feature = torch.from_numpy(feature)
+
+        # create a nan mask and then replace all nan values again with -1
+        nan_mask = torch.isnan(feature)
+        feature = torch.where(nan_mask, -1, feature)
+        standardized_features.append(feature)
+
+    # stack the standardized features back together into a tensor [batch size, seq len, features]
+    standardized_features_tensor = torch.cat(standardized_features, dim=2)
+    return standardized_features_tensor, scalers
+
+
+def standardize_test_features(
+        features: torch.tensor,
+        feature_names: List[str],
+        scalers: Dict[str, Any],
+):
+    batch_size, seq_length, num_features = features.shape
+    standardized_features = list()
+
+    for i, feature_name in enumerate(feature_names):
+
+        # extract the feature dimension; shape [batch size, text length, 1]
+        feature = features[:, :, i]
+
+        # we don't z-score transform the binary features
+        if feature_name in ['RR', 'FPReg']:
+            standardized_features.append(feature)
+            continue
+
+        # create a mask that masks all -1 (padding tokens)
+        mask = torch.any(feature[..., None] == torch.tensor(-1), dim=-1)
+
+        # replace all -1 values with nan such that they don't influence the z-score transformation
+        feature = torch.where(mask, torch.tensor(float('nan')), feature)
+
+        # reshape the feature into [batch size x text length, 1]
+        feature = feature.view(-1, 1)
+
+        # fit the scaler and save it to be later used on the test set
+        scaler = scalers[feature_name]
+
+        # transform the features and bring it back into shape [batch size, seq len, 1]
+        feature = scaler.transform(feature).reshape(batch_size, seq_length, 1)
+        # back to tensor
+        feature = torch.from_numpy(feature)
+
+        # create a nan mask and then replace all nan values again with -1
+        nan_mask = torch.isnan(feature)
+        feature = torch.where(nan_mask, -1, feature)
+        standardized_features.append(feature)
+
+    # stack the standardized features back together into a tensor [batch size, seq len, features]
+    standardized_features_tensor = torch.cat(standardized_features, dim=2)
+    return standardized_features_tensor
 
 
 
