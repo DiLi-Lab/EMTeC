@@ -116,6 +116,7 @@ def main():
     path_to_ratings = 'data/participant_info/participant_results.csv'
     path_to_reading_measures = 'data/reading_measures_corrected.csv'
     path_to_participant_info = 'data/participant_info/participant_info.csv'
+    path_to_stimuli = 'data/stimuli.csv'
 
     # make sure the input arguments make sense
     if args.task == 'classification':
@@ -177,19 +178,43 @@ def main():
     # participant_info = pd.read_csv(path_to_participant_info, sep='\t')
     # subject_ids = participant_info['subject_id'].tolist()
 
+    # which labels to use
+    label_key, label_key_onehot, task = '', '', ''
+    if args.target == 'text-type':
+        label_key = 'text_type'
+        label_key_onehot = 'text_type_one_hot'
+        task = 'classification'
+    elif args.target == 'difficulty':
+        if args.normalized:
+            label_key = 'rating_difficulty_zscore'
+            task = 'regression'
+        else:
+            label_key = 'rating_difficulty'
+            label_key_onehot = 'rating_difficulty_zscore'
+            task = 'classification'
+    elif args.target == 'engaging':
+        if args.normalized:
+            label_key = 'rating_engaging_zscore'
+            task = 'regression'
+        else:
+            label_key = 'rating_engaging'
+            label_key_onehot = 'rating_engaging_one_hot'
+            task = 'classification'
+
+
     tokenizer = BertTokenizerFast.from_pretrained(cf['model_pretrained'])
 
     data = prepare_eyettention_input(
         path_to_fixations=path_to_fixations,
         path_to_ratings=path_to_ratings,
         path_to_reading_measures=path_to_reading_measures,
+        path_to_stimuli=path_to_stimuli,
         tokenizer=tokenizer,
         max_sn_token=cf['max_sn_token'],
         max_sp_token=cf['max_sp_token'],
         max_sn_len=cf['max_sn_len'],
         max_sp_len=cf['max_sp_len'],
     )
-
 
 
     # iterate through the folds for k-fold cross-validation
@@ -285,6 +310,8 @@ def main():
                 word_ids_sp = batch['word_ids_sp'].to(device)
                 sp_len = batch['sp_len'].to(device)
 
+                labels = batch[label_key].to(device)
+
                 sp_pos = batch['sp_pos'].to(device)
                 sp_fix_dur = (batch['sp_fix_dur'] / 1000).to(device)
 
@@ -295,28 +322,30 @@ def main():
                 sn_word_len = (sn_word_len - sn_word_len_mean) / sn_word_len_std
                 sn_word_len = torch.nan_to_num(sn_word_len)
 
-                if cf['target'] == 'difficulty':
-                    if cf['task'] == 'classification':
-                        labels = batch['rating_difficulty_one_hot'].to(device)
-                    elif cf['task'] == 'regression':
-                        if cf['normalized']:
-                            labels = batch['rating_difficulty_zscore'].to(device)
-                        else:
-                            labels = batch['rating_difficulty'].to(device)
-                    else:
-                        raise NotImplementedError
-                elif cf['target'] == 'engaging':
-                    if cf['task'] == 'classification':
-                        labels = batch['rating_engaging_one_hot'].to(device)
-                    elif cf['task'] == 'regression':
-                        if cf['normalized']:
-                            labels = batch['rating_engaging_zscore'].to(device)
-                        else:
-                            labels = batch['rating_engaging'].to(device)
-                    else:
-                        raise NotImplementedError
-                elif cf['target'] == 'text-type':
-                    labels = batch['text_type_one_hot'].to(device)
+                # if cf['target'] == 'difficulty':
+                #     if cf['task'] == 'classification':
+                #         labels = batch['rating_difficulty_one_hot'].to(device)
+                #     elif cf['task'] == 'regression':
+                #         if cf['normalized']:
+                #             labels = batch['rating_difficulty_zscore'].to(device)
+                #         else:
+                #             labels = batch['rating_difficulty'].to(device)
+                #     else:
+                #         raise NotImplementedError
+                # elif cf['target'] == 'engaging':
+                #     if cf['task'] == 'classification':
+                #         labels = batch['rating_engaging_one_hot'].to(device)
+                #     elif cf['task'] == 'regression':
+                #         if cf['normalized']:
+                #             labels = batch['rating_engaging_zscore'].to(device)
+                #         else:
+                #             labels = batch['rating_engaging'].to(device)
+                #     else:
+                #         raise NotImplementedError
+                # elif cf['target'] == 'text-type':
+                #     labels = batch['text_type_one_hot'].to(device)
+
+                
 
                 # zero old gradients
                 optimizer.zero_grad()
@@ -334,12 +363,17 @@ def main():
                     sp_len=sp_len,
                 )
 
-                if args.loss == 'cross-entropy':
-                    loss = loss_fn(out, labels.float())
-                elif args.loss == 'ordinal-hinge':
+                # if args.loss == 'cross-entropy':
+                #     loss = loss_fn(out, labels.float())
+                # elif args.loss == 'ordinal-hinge':
+                #     loss = loss_fn(out, labels)
+                # elif args.loss == 'mse':
+                #     loss = loss_fn(out.squeeze(), labels.float())
+
+                if task == 'classification':
                     loss = loss_fn(out, labels)
-                elif args.loss == 'mse':
-                    loss = loss_fn(out.squeeze(), labels.float())
+                else:
+                    loss = loss_fn(out.squeeze(), labels)
 
                 # backpropagate error
                 loss.backward()
@@ -351,11 +385,12 @@ def main():
                 av_score.append(loss.to('cpu').detach().numpy())
                 print(f'error: {loss.to("cpu").detach().numpy()}')
 
-                loss_dict['train_loss'].append(loss.to('cpu').detach().numpy())
+                loss_dict['train_loss'].append(loss.to('cpu').detach().numpy().item())
 
             val_loss = list()
             model.eval()
             for batch_idx, batch in enumerate(val_dataloader):
+
                 print(f'--- fold {fold_idx} validation epoch {epoch} batch {batch_idx}')
                 with torch.no_grad():
                     sn_input_ids = batch['sn_input_ids'].to(device)
@@ -368,6 +403,8 @@ def main():
                     word_ids_sp = batch['word_ids_sp'].to(device)
                     sp_len = batch['sp_len'].to(device)
 
+                    labels = batch[label_key].to(device)
+
                     sp_pos = batch['sp_pos'].to(device)
                     sp_fix_dur = (batch['sp_fix_dur'] / 1000).to(device)
 
@@ -378,28 +415,28 @@ def main():
                     sn_word_len = (sn_word_len - sn_word_len_mean) / sn_word_len_std
                     sn_word_len = torch.nan_to_num(sn_word_len)
 
-                    if cf['target'] == 'difficulty':
-                        if cf['task'] == 'classification':
-                            labels = batch['rating_difficulty_one_hot'].to(device)
-                        elif cf['task'] == 'regression':
-                            if cf['normalized']:
-                                labels = batch['rating_difficulty_zscore'].to(device)
-                            else:
-                                labels = batch['rating_difficulty'].to(device)
-                        else:
-                            raise NotImplementedError
-                    elif cf['target'] == 'engaging':
-                        if cf['task'] == 'classification':
-                            labels = batch['rating_engaging_one_hot'].to(device)
-                        elif cf['task'] == 'regression':
-                            if cf['normalized']:
-                                labels = batch['rating_engaging_zscore'].to(device)
-                            else:
-                                labels = batch['rating_engaging'].to(device)
-                        else:
-                            raise NotImplementedError
-                    elif cf['target'] == 'text-type':
-                        labels = batch['text_type_one_hot'].to(device)
+                    # if cf['target'] == 'difficulty':
+                    #     if cf['task'] == 'classification':
+                    #         labels = batch['rating_difficulty_one_hot'].to(device)
+                    #     elif cf['task'] == 'regression':
+                    #         if cf['normalized']:
+                    #             labels = batch['rating_difficulty_zscore'].to(device)
+                    #         else:
+                    #             labels = batch['rating_difficulty'].to(device)
+                    #     else:
+                    #         raise NotImplementedError
+                    # elif cf['target'] == 'engaging':
+                    #     if cf['task'] == 'classification':
+                    #         labels = batch['rating_engaging_one_hot'].to(device)
+                    #     elif cf['task'] == 'regression':
+                    #         if cf['normalized']:
+                    #             labels = batch['rating_engaging_zscore'].to(device)
+                    #         else:
+                    #             labels = batch['rating_engaging'].to(device)
+                    #     else:
+                    #         raise NotImplementedError
+                    # elif cf['target'] == 'text-type':
+                    #     labels = batch['text_type_one_hot'].to(device)
 
 
                     out = model(
@@ -414,14 +451,21 @@ def main():
                         sp_len=sp_len,
                     )
 
-                    if args.loss == 'cross-entropy':
-                        loss = loss_fn(out, labels.float())
-                    elif args.loss == 'ordinal-hinge':
+                    if task == 'classification':
                         loss = loss_fn(out, labels)
-                    elif args.loss == 'mse':
-                        loss = loss_fn(out.squeeze(), labels.float())
+                    else:
+                        loss = loss_fn(out.squeeze(), labels)
+   
+
+                    # if args.loss == 'cross-entropy':
+                    #     loss = loss_fn(out, labels.float())
+                    # elif args.loss == 'ordinal-hinge':
+                    #     loss = loss_fn(out, labels)
+                    # elif args.loss == 'mse':
+                    #     loss = loss_fn(out.squeeze(), labels.float())
+
                     val_loss.append(loss.to('cpu').detach().numpy())
-                    loss_dict['val_loss'].append(loss.to('cpu').detach().numpy())
+                    loss_dict['val_loss'].append(loss.to('cpu').detach().numpy().item())
             print('\n---validation loss is {}'.format(np.mean(val_loss)))
             #loss_dict['val_loss'].append(np.mean(val_loss))
 
@@ -466,6 +510,8 @@ def main():
                 word_ids_sp = batch['word_ids_sp'].to(device)
                 sp_len = batch['sp_len'].to(device)
 
+                labels = batch[label_key].to(device)
+
                 sp_pos = batch['sp_pos'].to(device)
                 sp_fix_dur = (batch['sp_fix_dur'] / 1000).to(device)
 
@@ -476,28 +522,28 @@ def main():
                 sn_word_len = (sn_word_len - sn_word_len_mean) / sn_word_len_std
                 sn_word_len = torch.nan_to_num(sn_word_len)
 
-                if cf['target'] == 'difficulty':
-                    if cf['task'] == 'classification':
-                        labels = batch['rating_difficulty_one_hot'].to(device)
-                    elif cf['task'] == 'regression':
-                        if cf['normalized']:
-                            labels = batch['rating_difficulty_zscore'].to(device)
-                        else:
-                            labels = batch['rating_difficulty'].to(device)
-                    else:
-                        raise NotImplementedError
-                elif cf['target'] == 'engaging':
-                    if cf['task'] == 'classification':
-                        labels = batch['rating_engaging_one_hot'].to(device)
-                    elif cf['task'] == 'regression':
-                        if cf['normalized']:
-                            labels = batch['rating_engaging_zscore'].to(device)
-                        else:
-                            labels = batch['rating_engaging'].to(device)
-                    else:
-                        raise NotImplementedError
-                elif cf['target'] == 'text-type':
-                    labels = batch['text_type_one_hot'].to(device)
+                # if cf['target'] == 'difficulty':
+                #     if cf['task'] == 'classification':
+                #         labels = batch['rating_difficulty_one_hot'].to(device)
+                #     elif cf['task'] == 'regression':
+                #         if cf['normalized']:
+                #             labels = batch['rating_difficulty_zscore'].to(device)
+                #         else:
+                #             labels = batch['rating_difficulty'].to(device)
+                #     else:
+                #         raise NotImplementedError
+                # elif cf['target'] == 'engaging':
+                #     if cf['task'] == 'classification':
+                #         labels = batch['rating_engaging_one_hot'].to(device)
+                #     elif cf['task'] == 'regression':
+                #         if cf['normalized']:
+                #             labels = batch['rating_engaging_zscore'].to(device)
+                #         else:
+                #             labels = batch['rating_engaging'].to(device)
+                #     else:
+                #         raise NotImplementedError
+                # elif cf['target'] == 'text-type':
+                #     labels = batch['text_type_one_hot'].to(device)
 
                 out = model(
                     sn_input_ids=sn_input_ids,
@@ -510,27 +556,43 @@ def main():
                     sn_word_len=sn_word_len,
                     sp_len=sp_len,
                 )
-                test_outputs.append(out.cpu())
-                test_labels.append(labels.cpu())
 
-                if args.loss == 'cross-entropy':
-                    loss = loss_fn(out, labels.float())
-                elif args.loss == 'ordinal-hinge':
+
+                # if args.loss == 'cross-entropy':
+                #     loss = loss_fn(out, labels.float())
+                # elif args.loss == 'ordinal-hinge':
+                #     loss = loss_fn(out, labels)
+                # elif args.loss == 'mse':
+                #     loss = loss_fn(out.squeeze(), labels.float())
+
+                if task == 'classification':
                     loss = loss_fn(out, labels)
-                elif args.loss == 'mse':
-                    loss = loss_fn(out.squeeze(), labels.float())
+                else:
+                    loss = loss_fn(out.squeeze(), labels)
 
-                test_loss.append(loss.cpu())
+                test_loss.append(loss.to('cpu').detach().numpy().item())
 
-                if cf['task'] == 'regression':
-                    loss = loss_fn(out.squeeze(), labels.float())
-                    loss_dict['test_mse'].append(loss.item())
-                    test_labels_list = labels.tolist()
-                    test_predictions_list = out.squeeze(1).tolist()
-                    for test_label in test_labels_list:
-                        loss_dict['test_true_labels'].append(test_label)
-                    for test_prediction in test_predictions_list:
-                        loss_dict['test_predicted_labels'].append(test_prediction)
+
+                if cf['task'] == 'classification':
+                    test_outputs.append(out.to('cpu').detach().numpy())
+                    test_labels.append(labels.to('cpu').detach().numpy())
+                    test_labels_onehot.append(batch[label_key_onehot].to('cpu').detach().numpy())
+
+                if task == 'regression':
+                    for l in labels:
+                        test_labels.append(l.item())
+                    for o in out.squeeze(1).tolist():
+                        test_outputs.append(o)
+                
+                # if cf['task'] == 'regression':
+                #     loss = loss_fn(out.squeeze(), labels.float())
+                #     loss_dict['test_mse'].append(loss.item())
+                #     test_labels_list = labels.tolist()
+                #     test_predictions_list = out.squeeze(1).tolist()
+                #     for test_label in test_labels_list:
+                #         loss_dict['test_true_labels'].append(test_label)
+                #     for test_prediction in test_predictions_list:
+                #         loss_dict['test_predicted_labels'].append(test_prediction)
 
                 # add all meta information to list
                 model_name = batch['model']
@@ -557,23 +619,52 @@ def main():
                 linsear_write_scores.extend(linsear_write)
                 spache_scores.extend(spache)
 
-        # if we do classification, compute AUC
-        if cf['task'] == 'classification':
 
-            # concatenate all the model outputs such that the resulting tensor is of shape [instances, num_classes]
-            all_test_outputs = torch.cat([t.view(-1, cf['n_targets']) for t in test_outputs], dim=0)
-            # same for the one-hot encoded labels
-            all_test_labels = torch.cat([t.view(-1, cf['n_targets']) for t in test_labels], dim=0)
-            # convert output logits to probabilities
-            probabilities = nn.functional.softmax(all_test_outputs, dim=1).cpu()
-            true_class_index = np.argmax(all_test_labels.cpu(), axis=1)
-            auc_score = roc_auc_score(all_test_labels[:, true_class_index], probabilities[:, true_class_index])
-            loss_dict['test_AUC'].append(auc_score)
+
+
+        if task == 'classification':
+
+            # flatten the array of test outputs from [n batches, batch size, n classes] into [n samples, n classes]
+            all_test_outputs_flattened = np.concatenate(test_outputs, axis=0)
+            # convert the logits into probabilities
+            probabilities = nn.functional.softmax(torch.tensor(all_test_outputs_flattened), dim=1)
+            # flatten the true one-hot encoded test labels
+            labels_onehot_flattened = np.concatenate(test_labels_onehot, axis=0)
+            # get the actual predicted classes/predicted indices of the model
+            pred_classes = torch.argmax(probabilities, dim=1)
+            # flatten the true test labels (same as torch argmaxing the one-hot encoded labels)
+            test_labels_flattened = torch.tensor(np.concatenate(test_labels, axis=0))
+
+            loss_dict['true_labels_classification'] = test_labels_flattened.tolist()
+            loss_dict['pred_labels_classification'] = pred_classes.tolist()
+            loss_dict['true_labels_onehot_classification'] = labels_onehot_flattened
+            loss_dict['pred_logits_classification'] = all_test_outputs_flattened
+            loss_dict['pred_probabilities_classification'] = probabilities
+
+        if task == 'regression':
+
+            loss_dict['true_labels_regression'] = test_outputs
+            loss_dict['pred_labels_regression'] = test_labels
+
+        # # if we do classification, compute AUC
+        # if cf['task'] == 'classification':
+
+        #     # concatenate all the model outputs such that the resulting tensor is of shape [instances, num_classes]
+        #     all_test_outputs = torch.cat([t.view(-1, cf['n_targets']) for t in test_outputs], dim=0)
+        #     # same for the one-hot encoded labels
+        #     all_test_labels = torch.cat([t.view(-1, cf['n_targets']) for t in test_labels], dim=0)
+        #     # convert output logits to probabilities
+        #     probabilities = nn.functional.softmax(all_test_outputs, dim=1).cpu()
+        #     true_class_index = np.argmax(all_test_labels.cpu(), axis=1)
+        #     auc_score = roc_auc_score(all_test_labels[:, true_class_index], probabilities[:, true_class_index])
+        #     loss_dict['test_AUC'].append(auc_score)
 
         loss_dict['fix_dur_mean'] = fix_dur_mean
         loss_dict['fix_dur_std'] = fix_dur_std
         loss_dict['sn_word_len_mean'] = sn_word_len_mean
         loss_dict['sn_word_len_std'] = sn_word_len_std
+
+        loss_dict['test_loss'] = test_loss
 
         # add all metadata to stats dict
         loss_dict['model'] = models
