@@ -337,9 +337,9 @@ def prepare_eyettention_input(
     # one-hot encode the text types
     text_types_one_hot = nn.functional.one_hot(torch.tensor(text_type_labels), num_classes=6)
 
-    ratings_difficulty = np.asarray(ratings_difficulty, dtype=np.int64)
+    ratings_difficulty = np.asarray(ratings_difficulty, dtype=np.int64) - 1
     ratings_difficulty_zscore = np.asarray(ratings_difficulty_zscore, dtype=np.float32)
-    ratings_engaging = np.asarray(ratings_engaging, dtype=np.int64)
+    ratings_engaging = np.asarray(ratings_engaging, dtype=np.int64) - 1
     ratings_engaging_zscore = np.asarray(ratings_engaging_zscore, dtype=np.float32)
 
     # convert the readability metric lists to numpy arrays
