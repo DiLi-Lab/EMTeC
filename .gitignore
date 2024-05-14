@@ -5,6 +5,7 @@ data/
 analyses/Eyettention/
 analyses/scratch_descriptive_stats.ipynb
 analyses/scratch_eyettention.ipynb
+*.sh
 
 # Byte-compiled / optimized / DLL util_files
 __pycache__/
