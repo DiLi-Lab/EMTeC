@@ -48,23 +48,26 @@ def prepare_eyettention_input(
         path_to_fixations: str,
         path_to_ratings: str,
         path_to_reading_measures: str,
+        path_to_stimuli: str,
         tokenizer: BertTokenizerFast,
         max_sn_token: int,
         max_sp_token: int,
         max_sn_len: int,
         max_sp_len: int,
+        exclude_subjects: Optional[List[str]] = None,
 ):
     """
     Prepare the input for the Eyettention model.
     :param path_to_fixations: path to the fixations data
     :param path_to_ratings: path to the ratings data
     :param path_to_reading_measures: path to the reading measures data
+    :param path_to_stimuli: path to the stimuli data
     :param tokenizer: the tokenizer to use
     :param max_sn_token: the maximum number of tokens/subwords in a text
     :param max_sp_token: the maximum number of tokens/subwords in a scanpath
     :param max_sn_len: the maximum number of words in a text
     :param max_sp_len: the maximum number of words in a scanpath
-    :param normalize_ratings: whether to normalize the ratings
+    :param exclude_subjects: list of subjects to possibly exclude
     """
     fixations = pd.read_csv(path_to_fixations, sep='\t')
     ratings = pd.read_csv(path_to_ratings, sep='\t')
@@ -121,7 +124,23 @@ def prepare_eyettention_input(
     SP_landing_pos = list()
     SP_len = list()
 
+    # lists to hold the readability metrics
+    flesch_scores = list()
+    flesch_kincaid_scores = list()
+    gunning_fog_scores = list()
+    coleman_liau_scores = list()
+    dale_chall_scores = list()
+    ari_scores = list()
+    linsear_write_scores = list()
+    spache_scores = list()
+
     subject_ids = list()
+    models = list()
+    decoding_strategies = list()
+    item_ids = list()
+
+    # read in stimuli file
+    stimuli = pd.read_csv(path_to_stimuli, sep='\t')
 
     text_types = ['summarization', 'non-fiction', 'poetry', 'words_given', 'article_synopsis', 'fiction']
     text_type_labels = list()
@@ -146,6 +165,36 @@ def prepare_eyettention_input(
         subject_id = fix_df['subject_id'].unique().item()
 
         subject_ids.append(subject_id)
+        models.append(model)
+        decoding_strategies.append(decoding_strategy)
+        item_ids.append(item_id)
+
+        # get the readability scores
+        flesch = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (
+                    stimuli['decoding_strategy'] == decoding_strategy)]['flesch'].item()
+        flesch_kincaid = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (
+                    stimuli['decoding_strategy'] == decoding_strategy)]['flesch_kincaid'].item()
+        gunning_fog = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (
+                    stimuli['decoding_strategy'] == decoding_strategy)]['gunning_fog'].item()
+        coleman_liau = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (
+                    stimuli['decoding_strategy'] == decoding_strategy)]['coleman_liau'].item()
+        dale_chall = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (
+                    stimuli['decoding_strategy'] == decoding_strategy)]['dale_chall'].item()
+        ari = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (
+                    stimuli['decoding_strategy'] == decoding_strategy)]['ari'].item()
+        linsear_write = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (
+                    stimuli['decoding_strategy'] == decoding_strategy)]['linsear_write'].item()
+        spache = stimuli.loc[(stimuli['item_id'] == item_id) & (stimuli['model'] == model) & (
+                    stimuli['decoding_strategy'] == decoding_strategy)]['spache'].item()
+
+        flesch_scores.append(flesch)
+        flesch_kincaid_scores.append(flesch_kincaid)
+        gunning_fog_scores.append(gunning_fog)
+        coleman_liau_scores.append(coleman_liau)
+        dale_chall_scores.append(dale_chall)
+        ari_scores.append(ari)
+        linsear_write_scores.append(linsear_write)
+        spache_scores.append(spache)
 
         # locate the corresponding reading measures in the reading measures data frame to get the sentence and word lens
         rms_df = reading_measures.loc[
@@ -293,6 +342,22 @@ def prepare_eyettention_input(
     ratings_engaging = np.asarray(ratings_engaging, dtype=np.int64)
     ratings_engaging_zscore = np.asarray(ratings_engaging_zscore, dtype=np.float32)
 
+    # convert the readability metric lists to numpy arrays
+    flesch_scores = np.asarray(flesch_scores, dtype=np.float32)
+    flesch_kincaid_scores = np.asarray(flesch_kincaid_scores, dtype=np.float32)
+    gunning_fog_scores = np.asarray(gunning_fog_scores, dtype=np.float32)
+    coleman_liau_scores = np.asarray(coleman_liau_scores, dtype=np.float32)
+    dale_chall_scores = np.asarray(dale_chall_scores, dtype=np.float32)
+    ari_scores = np.asarray(ari_scores, dtype=np.float32)
+    linsear_write_scores = np.asarray(linsear_write_scores, dtype=np.float32)
+    spache_scores = np.asarray(spache_scores, dtype=np.float32)
+
+    # convert the metadata lists to numpy arrays
+    subject_ids = np.array(subject_ids)
+    models = np.array(models)
+    decoding_strategies = np.array(decoding_strategies)
+    item_ids = np.array(item_ids)
+
     data = {
         'SN_input_ids': SN_input_ids,
         'SN_attention_mask': SN_attention_mask,
@@ -310,9 +375,20 @@ def prepare_eyettention_input(
         'ratings_engaging': ratings_engaging,
         'ratings_engaging_one_hot': ratings_engaging_one_hot,
         'ratings_engaging_zscore': ratings_engaging_zscore,
-        'subject_ids': np.array(subject_ids),
         'text_type_labels': np.array(text_type_labels),
         'text_type_labels_one_hot': text_types_one_hot,
+        'subject_ids': subject_ids,
+        'model': models,
+        'decoding_strategy': decoding_strategies,
+        'item_id': item_ids,
+        'flesch': flesch_scores,
+        'flesch_kincaid': flesch_kincaid_scores,
+        'gunning_fog': gunning_fog_scores,
+        'coleman_liau': coleman_liau_scores,
+        'dale_chall': dale_chall_scores,
+        'ari': ari_scores,
+        'linsear_write': linsear_write_scores,
+        'spache': spache_scores,
     }
 
     return data
@@ -344,9 +420,20 @@ class EMTeCDataset(Dataset):
         sample['rating_engaging'] = self.data['ratings_engaging'][idx]
         sample['rating_engaging_one_hot'] = self.data['ratings_engaging_one_hot'][idx, :]
         sample['rating_engaging_zscore'] = self.data['ratings_engaging_zscore'][idx]
-        sample['subject_id'] = self.data['subject_ids'][idx]
         sample['text_type'] = self.data['text_type_labels'][idx]
         sample['text_type_one_hot'] = self.data['text_type_labels_one_hot'][idx, :]
+        sample['subject_id'] = self.data['subject_ids'][idx]
+        sample['model'] = self.data['model'][idx]
+        sample['decoding_strategy'] = self.data['decoding_strategy'][idx]
+        sample['item_id'] = self.data['item_id'][idx]
+        sample['flesch'] = self.data['flesch'][idx]
+        sample['flesch_kincaid'] = self.data['flesch_kincaid'][idx]
+        sample['gunning_fog'] = self.data['gunning_fog'][idx]
+        sample['coleman_liau'] = self.data['coleman_liau'][idx]
+        sample['dale_chall'] = self.data['dale_chall'][idx]
+        sample['ari'] = self.data['ari'][idx]
+        sample['linsear_write'] = self.data['linsear_write'][idx]
+        sample['spache'] = self.data['spache'][idx]
         return sample
 
 
@@ -480,11 +567,12 @@ def split_train_val_eyettention(
         :param val_size:
         :return:
     """
-    SN_input_ids_train, SN_input_ids_test, SN_attention_mask_train, SN_attention_mask_test, SN_WORD_len_train, SN_WORD_len_test, WORD_ids_sn_train, WORD_ids_sn_test, SP_input_ids_train, SP_input_ids_test, SP_attention_mask_train, SP_attention_mask_test, WORD_ids_sp_train, WORD_ids_sp_test, SP_ordinal_pos_train, SP_ordinal_pos_test, SP_fix_dur_train, SP_fix_dur_test, SP_len_train, SP_len_test, ratings_difficulty_train, ratings_difficulty_test, ratings_difficulty_one_hot_train, ratings_difficulty_one_hot_test, ratings_difficulty_zscore_train, ratings_difficulty_zscore_test, ratings_engaging_train, ratings_engaging_test, ratings_engaging_one_hot_train, ratings_engaging_one_hot_test, ratings_engaging_zscore_train, ratings_engaging_zscore_test, subject_ids_train, subject_ids_test, text_type_labels_train, text_type_labels_test, text_type_labels_one_hot_train, text_type_labels_one_hot_test = train_test_split(
+    SN_input_ids_train, SN_input_ids_test, SN_attention_mask_train, SN_attention_mask_test, SN_WORD_len_train, SN_WORD_len_test, WORD_ids_sn_train, WORD_ids_sn_test, SP_input_ids_train, SP_input_ids_test, SP_attention_mask_train, SP_attention_mask_test, WORD_ids_sp_train, WORD_ids_sp_test, SP_ordinal_pos_train, SP_ordinal_pos_test, SP_fix_dur_train, SP_fix_dur_test, SP_len_train, SP_len_test, ratings_difficulty_train, ratings_difficulty_test, ratings_difficulty_one_hot_train, ratings_difficulty_one_hot_test, ratings_difficulty_zscore_train, ratings_difficulty_zscore_test, ratings_engaging_train, ratings_engaging_test, ratings_engaging_one_hot_train, ratings_engaging_one_hot_test, ratings_engaging_zscore_train, ratings_engaging_zscore_test, subject_ids_train, subject_ids_test, text_type_labels_train, text_type_labels_test, text_type_labels_one_hot_train, text_type_labels_one_hot_test, model_train, model_test, decoding_strategy_train, decoding_strategy_test, item_id_train, item_id_test, flesch_train, flesch_test, flesch_kincaid_train, flesch_kincaid_test, gunning_fog_train, gunning_fog_test, coleman_liau_train, coleman_liau_test, dale_chall_train, dale_chall_test, ari_train, ari_test, linsear_write_train, linsear_write_test, spache_train, spache_test = train_test_split(
         train_data['SN_input_ids'], train_data['SN_attention_mask'], train_data['SN_WORD_len'], train_data['WORD_ids_sn'], train_data['SP_input_ids'], train_data['SP_attention_mask'],
         train_data['WORD_ids_sp'], train_data['SP_ordinal_pos'], train_data['SP_fix_dur'], train_data['SP_len'], train_data['ratings_difficulty'], train_data['ratings_difficulty_one_hot'],
         train_data['ratings_difficulty_zscore'], train_data['ratings_engaging'], train_data['ratings_engaging_one_hot'], train_data['ratings_engaging_zscore'], train_data['subject_ids'],
-        train_data['text_type_labels'], train_data['text_type_labels_one_hot'],
+        train_data['text_type_labels'], train_data['text_type_labels_one_hot'], train_data['model'], train_data['decoding_strategy'], train_data['item_id'], train_data['flesch'],
+        train_data['flesch_kincaid'], train_data['gunning_fog'], train_data['coleman_liau'], train_data['dale_chall'], train_data['ari'], train_data['linsear_write'], train_data['spache'],
         test_size=val_size, random_state=0, shuffle=True,
     )
     new_train_data = {
@@ -507,6 +595,17 @@ def split_train_val_eyettention(
         'subject_ids': subject_ids_train,
         'text_type_labels': text_type_labels_train,
         'text_type_labels_one_hot': text_type_labels_one_hot_train,
+        'model': model_train,
+        'decoding_strategy': decoding_strategy_train,
+        'item_id': item_id_train,
+        'flesch': flesch_train,
+        'flesch_kincaid': flesch_kincaid_train,
+        'gunning_fog': gunning_fog_train,
+        'coleman_liau': coleman_liau_train,
+        'dale_chall': dale_chall_train,
+        'ari': ari_train,
+        'linsear_write': linsear_write_train,
+        'spache': spache_train,
     }
     val_data = {
         'SN_input_ids': SN_input_ids_test,
@@ -528,6 +627,17 @@ def split_train_val_eyettention(
         'subject_ids': subject_ids_test,
         'text_type_labels': text_type_labels_test,
         'text_type_labels_one_hot': text_type_labels_one_hot_test,
+        'model': model_test,
+        'decoding_strategy': decoding_strategy_test,
+        'item_id': item_id_test,
+        'flesch': flesch_test,
+        'flesch_kincaid': flesch_kincaid_test,
+        'gunning_fog': gunning_fog_test,
+        'coleman_liau': coleman_liau_test,
+        'dale_chall': dale_chall_test,
+        'ari': ari_test,
+        'linsear_write': linsear_write_test,
+        'spache': spache_test,
     }
     return new_train_data, val_data
 
