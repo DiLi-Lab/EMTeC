@@ -175,8 +175,8 @@ def main():
     ):
 
         # TODO remove break
-        if fold_idx == 1:
-            break
+        #if fold_idx == 1:
+        #    break
 
         # dict to hold the training and test stats
         stats_dict = {
@@ -201,8 +201,6 @@ def main():
         train_data, val_data = split_train_val_bert(
             train_data=train_data,
         )
-
-        breakpoint()
 
         if args.zscore:
             # standardize the features
@@ -245,7 +243,7 @@ def main():
                 loss_fn = torch.nn.MSELoss()
             else:
                 loss_fn = torch.nn.CrossEntropyLoss(reduction='mean')
-
+        
         # variables for early stopping
         old_score = 1e10
         av_score = deque(maxlen=100)
