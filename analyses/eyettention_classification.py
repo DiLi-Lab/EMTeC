@@ -445,8 +445,11 @@ def main():
         model.load_state_dict(torch.load(os.path.join(model_savepath, f'model-fold{fold_idx}.pth'), map_location='cpu'))
         model.to(device)
         model.eval()
-        test_outputs = list()
-        test_labels = list()
+        test_outputs, test_labels, test_labels_onehot = list(), list(), list()
+        models, decoding_strategies, item_ids = list(), list(), list()
+        flesch_scores, flesch_kincaid_scores, gunning_fog_scores = list(), list(), list()
+        coleman_liau_scores, dale_chall_scores, ari_scores = list(), list(), list()
+        linsear_write_scores, spache_scores = list(), list()
         test_loss = list()
         for batch_idx, batch in enumerate(test_dataloader):
             with torch.no_grad():
@@ -529,6 +532,31 @@ def main():
                     for test_prediction in test_predictions_list:
                         loss_dict['test_predicted_labels'].append(test_prediction)
 
+                # add all meta information to list
+                model_name = batch['model']
+                decoding_strategy = batch['decoding_strategy']
+                item_id = batch['item_id']
+                flesch = batch['flesch'].tolist()
+                flesch_kincaid = batch['flesch_kincaid'].tolist()
+                gunning_fog = batch['gunning_fog'].tolist()
+                coleman_liau = batch['coleman_liau'].tolist()
+                dale_chall = batch['dale_chall'].tolist()
+                ari = batch['ari'].tolist()
+                linsear_write = batch['linsear_write'].tolist()
+                spache = batch['spache'].tolist()
+
+                models.extend(model_name)
+                decoding_strategies.extend(decoding_strategy)
+                item_ids.extend(item_id)
+                flesch_scores.extend(flesch)
+                flesch_kincaid_scores.extend(flesch_kincaid)
+                gunning_fog_scores.extend(gunning_fog)
+                coleman_liau_scores.extend(coleman_liau)
+                dale_chall_scores.extend(dale_chall)
+                ari_scores.extend(ari)
+                linsear_write_scores.extend(linsear_write)
+                spache_scores.extend(spache)
+
         # if we do classification, compute AUC
         if cf['task'] == 'classification':
 
@@ -546,6 +574,19 @@ def main():
         loss_dict['fix_dur_std'] = fix_dur_std
         loss_dict['sn_word_len_mean'] = sn_word_len_mean
         loss_dict['sn_word_len_std'] = sn_word_len_std
+
+        # add all metadata to stats dict
+        loss_dict['model'] = models
+        loss_dict['decoding_strategy'] = decoding_strategies
+        loss_dict['item_id'] = item_ids
+        loss_dict['flesch'] = flesch_scores
+        loss_dict['flesch_kincaid'] = flesch_kincaid_scores
+        loss_dict['gunning_fog'] = gunning_fog_scores
+        loss_dict['coleman_liau'] = coleman_liau_scores
+        loss_dict['dale_chall'] = dale_chall_scores
+        loss_dict['ari'] = ari_scores
+        loss_dict['linsear_write'] = linsear_write_scores
+        loss_dict['spache'] = spache_scores
 
         # save results
         with open(os.path.join(model_savepath, f'model-results-fold{fold_idx}.pickle'), 'wb') as handle:
