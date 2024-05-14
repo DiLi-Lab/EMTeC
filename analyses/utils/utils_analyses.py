@@ -1099,7 +1099,7 @@ def standardize_train_features(
         standardized_features.append(feature)
 
     # stack the standardized features back together into a tensor [batch size, seq len, features]
-    standardized_features_tensor = torch.cat(standardized_features, dim=2)
+    standardized_features_tensor = torch.cat(standardized_features, dim=2).to(dtype=torch.float32)
     return standardized_features_tensor, scalers
 
 
@@ -1144,7 +1144,7 @@ def standardize_test_features(
         standardized_features.append(feature)
 
     # stack the standardized features back together into a tensor [batch size, seq len, features]
-    standardized_features_tensor = torch.cat(standardized_features, dim=2)
+    standardized_features_tensor = torch.cat(standardized_features, dim=2).to(dtype=torch.float32)
     return standardized_features_tensor
 
 
