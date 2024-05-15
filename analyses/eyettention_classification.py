@@ -180,26 +180,54 @@ def main():
 
     # which labels to use
     label_key, label_key_onehot, task = '', '', ''
-    if args.target == 'text-type':
-        label_key = 'text_type'
-        label_key_onehot = 'text_type_one_hot'
-        task = 'classification'
-    elif args.target == 'difficulty':
-        if args.normalized:
-            label_key = 'rating_difficulty_zscore'
-            task = 'regression'
-        else:
-            label_key = 'rating_difficulty'
-            label_key_onehot = 'rating_difficulty_one_hot'
-            task = 'classification'
-    elif args.target == 'engaging':
-        if args.normalized:
-            label_key = 'rating_engaging_zscore'
-            task = 'regression'
-        else:
+
+    task = args.task
+    if task == 'regression':
+        if args.target == 'engaging':
+            if args.normalized:
+                label_key = 'rating_engaging_zscore'
+            else:
+                label_key = 'rating_engaging'
+        elif args.target == 'difficulty':
+            if args.normalized:
+                label_key = 'rating_difficulty_zscore'
+            else:
+                label_key = 'rating_difficulty'
+    elif task == 'classification':
+        if args.target == 'engaging':
             label_key = 'rating_engaging'
             label_key_onehot = 'rating_engaging_one_hot'
-            task = 'classification'
+        elif args.target == 'difficulty':
+            label_key = 'rating_difficulty'
+            label_key_onehot = 'rating_difficulty_one_hot'
+        elif args.target == 'text-type':
+            label_key = 'text_type'
+            label_key_onehot = 'text_type_one_hot'
+        else:
+            raise NotImplementedError
+    else:
+        raise NotImplementedError
+
+    # if args.target == 'text-type':
+    #     label_key = 'text_type'
+    #     label_key_onehot = 'text_type_one_hot'
+    #     task = 'classification'
+    # elif args.target == 'difficulty':
+    #     if args.normalized:
+    #         label_key = 'rating_difficulty_zscore'
+    #         task = 'regression'
+    #     else:
+    #         label_key = 'rating_difficulty'
+    #         label_key_onehot = 'rating_difficulty_one_hot'
+    #         task = 'classification'
+    # elif args.target == 'engaging':
+    #     if args.normalized:
+    #         label_key = 'rating_engaging_zscore'
+    #         task = 'regression'
+    #     else:
+    #         label_key = 'rating_engaging'
+    #         label_key_onehot = 'rating_engaging_one_hot'
+    #         task = 'classification'
 
 
     tokenizer = BertTokenizerFast.from_pretrained(cf['model_pretrained'])
