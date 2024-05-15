@@ -190,7 +190,7 @@ def main():
             task = 'regression'
         else:
             label_key = 'rating_difficulty'
-            label_key_onehot = 'rating_difficulty_zscore'
+            label_key_onehot = 'rating_difficulty_one_hot'
             task = 'classification'
     elif args.target == 'engaging':
         if args.normalized:
