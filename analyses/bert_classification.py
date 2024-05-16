@@ -256,7 +256,6 @@ def main():
 
             for batch_idx, batch in enumerate(train_dataloader):
 
-
                 print(f'--- fold {fold_idx} training epoch {epoch} batch {batch_idx}', end='\t')
 
                 features = batch['features'].to(device)
