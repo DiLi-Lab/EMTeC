@@ -97,7 +97,7 @@ def calculate_wordfreq(annotated_df):
     annotated_df['zipf_freq'] = annotated_df['word'].apply(lambda w: zipf_frequency(w, 'en'))
 
     # Calculate negative log frequency, handling cases where frequency is zero
-    annotated_df['neg_log_word_freq'] = annotated_df['word_freq'].apply(lambda x: -np.log(x) if x > 0 else 0)
+    # annotated_df['neg_log_word_freq'] = annotated_df['word_freq'].apply(lambda x: -np.log(x) if x > 0 else 0)
 
     return annotated_df
 
