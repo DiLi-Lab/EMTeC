@@ -44,7 +44,7 @@ fi
 echo "Running surprisal analysis for each model..."
 for MODEL in "${MODELS[@]}"; do
     echo "Processing with model: $MODEL"
-    CUDA_VISIBLE_DEVICES=5,6,7 python -m "$SURPRISAL_SCRIPT" "$TEMP_OUTPUT" "$OUTPUT_FILE" "$MODEL"
+    CUDA_VISIBLE_DEVICES=4,5,6 python -m "$SURPRISAL_SCRIPT" "$TEMP_OUTPUT" "$OUTPUT_FILE" "$MODEL"
 done
 
 # Check if the surprisal script ran successfully and output file was created
