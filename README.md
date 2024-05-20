@@ -1,8 +1,12 @@
 # EMTeC: Eye movements on Machine-generated Texts Corpus
 
+TODO update links
 * The preprint **EMTeC: Eye movements on Machine-generated Texts Corpus** is available on TODO
-* The eye-tracking data is available on [OSF](https://osf.io/ajqze/)
+* The eye-tracking data is available via [OSF](https://osf.io/ajqze/) or can be automatically downloaded using a python script (see below).
 * The tensors are available on [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/GCU0W8&version=DRAFT)
+    * Attention: beware that the tensors require a lot of story to be downloaded. The following tensors are not provided via Dataverse because they exceed the maximum file size
+        * Mistral: beam search item 34, item 43; greedy search item 43
+        * WizardLM: beam search item 34, item 35, item 40, item 43; greedy search item 43; sampling item 43, top-k item 43, top-p item 43
 
 
 This repository contains the code base used to create the experimental stimuli in EMTeC. It's for reproducibility. 
@@ -348,7 +352,7 @@ as I had to adjust the minimum number of words. This annotation will directly ad
 To annotate the stimuli texts on word-level with frequency scores, PoS tags, dependency tags, surprisal values, etc., please run the bash script
 
 ```bash
-bash run_annotation_word.sh gpt2 gpt2-large opt-350m opt-1.3b mistral phi2 llama2-7b llama2-13b pythia-6.9 pythia-12b
+bash run_annotation_word.sh gpt2 gpt2-large opt-350m opt-1.3b mistral_base mistral_instruct phi2 llama2-7b llama2-13b pythia-6.9 pythia-12b
 ```
 This will first create a folder `unique_aois` in the `data` directory, which contains the areas of interest on word-level 
 for each stimulus text (i.e., each condition; item id, model, decoding strategy). First the PoS tags, dependency tags, 

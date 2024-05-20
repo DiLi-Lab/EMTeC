@@ -59,15 +59,15 @@ def main():
             spache_scores.append(r.spache().score)
         except:
             print('Cannot compute readability metric. At least 50 words required.')
-            flesch_scores.append(-1)
-            flesch_ease.append('.')
-            flesch_kincaid_scores.append(-1)
-            gunning_fog_scores.append(-1)
-            coleman_liau_scores.append(-1)
-            dale_chall_scores.append(-1)
-            ari_scores.append(-1)
-            linsear_write_scores.append(-1)
-            spache_scores.append(-1)
+            flesch_scores.append(np.nan)
+            flesch_ease.append(np.nan)
+            flesch_kincaid_scores.append(np.nan)
+            gunning_fog_scores.append(np.nan)
+            coleman_liau_scores.append(np.nan)
+            dale_chall_scores.append(np.nan)
+            ari_scores.append(np.nan)
+            linsear_write_scores.append(np.nan)
+            spache_scores.append(np.nan)
 
     # add text metrics to data frame
     stimuli['text_length'] = text_lengths
