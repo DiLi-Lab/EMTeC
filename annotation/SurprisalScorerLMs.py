@@ -12,10 +12,16 @@ class SurprisalScorer:
         self.name = model_name
 
         # load model and tokenizer
-        if self.name == 'mistral':
+        if self.name == 'mistral-instruct':
             self.tokenizer = AutoTokenizer.from_pretrained('mistralai/Mistral-7B-Instruct-v0.1')
             self.model = AutoModelForCausalLM.from_pretrained(
                 'mistralai/Mistral-7B-Instruct-v0.1',
+                device_map='auto',
+            )
+        elif self.name == 'mistral-base':
+            self.tokenizer = AutoTokenizer.from_pretrained('mistralai/Mistral-7B-v0.1')
+            self.model = AutoModelForCausalLM.from_pretrained(
+                'mistralai/Mistral-7B-v0.1',
                 device_map='auto',
             )
         elif self.name == 'phi2':
