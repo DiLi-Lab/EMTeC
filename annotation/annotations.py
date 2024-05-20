@@ -127,7 +127,7 @@ def main(input_file, aoi_directory, output_file):
     annotated_df = annotations.enhance_annotations()
 
     # Step 1: Group data by specific columns
-    columns_to_group_by = ['item_id', 'model', 'decoding_strategy', 'list', 'word', 'word_index']
+    columns_to_group_by = ['item_id', 'model', 'decoding_strategy', 'list', 'word', 'word_id']
     grouped_data = annotated_df.groupby(columns_to_group_by).size()
 
     # Step 2: Identify groups with more than one record
