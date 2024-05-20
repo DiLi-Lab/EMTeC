@@ -352,7 +352,7 @@ as I had to adjust the minimum number of words. This annotation will directly ad
 To annotate the stimuli texts on word-level with frequency scores, PoS tags, dependency tags, surprisal values, etc., please run the bash script
 
 ```bash
-bash run_annotation_word.sh gpt2 gpt2-large opt-350m opt-1.3b mistral_base mistral_instruct phi2 llama2-7b llama2-13b pythia-6.9 pythia-12b
+bash run_annotation_word.sh gpt2 gpt2-large opt-350m opt-1.3b mistral-base mistral-instruct phi2 llama2-7b llama2-13b pythia-6.9b pythia-12b
 ```
 This will first create a folder `unique_aois` in the `data` directory, which contains the areas of interest on word-level 
 for each stimulus text (i.e., each condition; item id, model, decoding strategy). First the PoS tags, dependency tags, 
