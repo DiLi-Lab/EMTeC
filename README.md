@@ -340,7 +340,7 @@ done on corrected fixations. If it is omitted, reading measures are computed on 
 
 ### Annotation on text-level
 
-In order to annotate the stimuli texts with readability scores, please run
+Please insert your huggingface access token in line 109 in `annotation/annotations.py`, then in order to annotate the stimuli texts with readability scores, please run
 ```bash
 bash run_annotation_text.sh
 ```

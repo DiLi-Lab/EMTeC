@@ -6,6 +6,8 @@ import re
 import os
 from wordfreq import word_frequency, zipf_frequency
 
+from huggingface_hub import login
+
 # Load the SpaCy NLP model for English
 nlp = spacy.load("en_core_web_sm")
 
@@ -102,6 +104,10 @@ def calculate_wordfreq(annotated_df):
     return annotated_df
 
 def main(input_file, aoi_directory, output_file):
+
+    # TODO replace with your huggingface access token
+    login(token='')
+
     data = pd.read_csv(input_file, sep='\t', quotechar='"')[['model', 'decoding_strategy', 'item_id', 'list', 'gen_seq_trunc']]
 
     aoi_data_list = []
