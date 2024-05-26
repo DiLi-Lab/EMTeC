@@ -3,6 +3,8 @@ import numpy as np
 import string
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+STOP_CHARS_SURP = []
+
 class SurprisalScorer:
     def __init__(self, model_name="gpt2"):
 
@@ -113,12 +115,79 @@ class SurprisalScorer:
         assert len(prob_list) == len(words), "Mismatch in probabilities and words count"
 
         return prob_list
+    
+
+    def multiply_subword_metrics(self, offset, probs, text, words):
+        prob = []
+        j = 0
+        for i in range(0, len(words)):  # i index for reference word list
+            try:
+                # case 1: tokenized word = white-space separated word
+                # print(f'{words[i]} ~ {text[offset[j][0]:offset[j][1]]}')
+                if words[i] == text[offset[j][0]: offset[j][1]].strip().lstrip():
+                    prob += [probs[j]]  # add probability of word to list
+                    #breakpoint()
+                    # print('subword = word')
+                    # print(words[i])
+                    # print(text[offset[j][0]: offset[j][1]])
+                    # print(text[offset[j][0]: offset[j][1]].strip().lstrip())
+                    j += 1
+                    
+                    
+                # case 2: tokenizer split subword tokens: merge subwords and add up probabilities until the same
+                else:
+
+                    #print('subword != word')
+                    concat_token = text[offset[j][0]: offset[j][1]].strip().lstrip()
+                    concat_prob = probs[j]
+
+                    if j > 1:
+                        if offset[j] == offset[j-1]:
+                            j += 1
+                            continue
+ 
+                    #print(concat_token)
+                    while concat_token != words[i]:
+
+                        if offset[j+1] == offset[j]:
+                            j += 1
+                            continue
+                        
+                        j += 1
+                        
+
+                        #print(j)
+                        concat_token += text[
+                                        offset[j][0]: offset[j][1]
+                                        ].strip()
+                        # define characters that should not be added to word probability values
+                        if (
+                                text[offset[j][0]: offset[j][1]].strip().lstrip()
+                                not in STOP_CHARS_SURP
+                        ):
+                            concat_prob *= probs[j]  # multiply probabilities
+                        #print(text[offset[j][0]: offset[j][1]].strip())
+                        #print(j)
+                        #print(concat_token)
+                    prob += [concat_prob]
+                    j += 1
+                    #print(j)
+            except IndexError:
+                #print('error')
+                if len(prob) == len(words)-1:
+                    prob += [concat_prob]
+                break
+        #breakpoint()
+        assert len(prob) == len(words), f"Length of probabilities ({len(prob)}) does not match length of words ({len(words)}) for sentence {sent}"
+        return prob
+
 
     def score(self, text_seq, BOS=True):
         with torch.no_grad():
             words = text_seq.split()
             all_probs = torch.tensor([], device=self.model.device)
             start_ind = 0
+            offset_mapping = []
 
             while True:
                 encodings = self.tokenizer(
@@ -138,17 +207,35 @@ class SurprisalScorer:
                 labels = tensor_input[..., 1:].contiguous()
 
                 subtoken_probs = probs[0, torch.arange(labels.size(-1)), labels[0]]
-                all_probs = torch.cat([all_probs, subtoken_probs])
-                offset_mapping = [(i + start_ind, j + start_ind) for i, j in encodings["offset_mapping"][1:-1]]
+
+                offset = 0 if start_ind == 0 else self.STRIDE - 1
+                all_probs = torch.cat([all_probs, subtoken_probs[offset:-1]])
+                #offset_mapping = [(i + start_ind, j + start_ind) for i, j in encodings["offset_mapping"][1:-1]]
+                #offset_mapping = [(i + start_ind, j + start_ind) for i, j in encodings["offset_mapping"]]
+                offset_mapping.extend(
+                    [
+                        (i + start_ind, j + start_ind)
+                        for i, j in encodings["offset_mapping"][offset:]
+                    ]
+                )
+
 
                 if encodings["offset_mapping"][-1][1] + start_ind >= len(text_seq):
                     break
 
                 start_ind += encodings["offset_mapping"][-self.STRIDE][1]
 
-            prob_list = self.add_subword_metrics(offset_mapping, all_probs.cpu().numpy(), text_seq, words)
+            #breakpoint()
+            #prob_list = self.add_subword_metrics(offset_mapping, all_probs.cpu().numpy(), text_seq, words)
+            prob_list = self.multiply_subword_metrics(offset_mapping, all_probs.cpu(), text_seq, words)
+
+            # if not len(prob_list) == len(words):
+            #     breakpoint()
+
             assert len(prob_list) == len(words), "Mismatch in probabilities and words count"
-            surprisal_values = -np.log2(np.clip(prob_list, a_min=5e-10, a_max=None))  # Prevent log(0)
+            #surprisal_values = -np.log2(np.clip(prob_list, a_min=5e-10, a_max=None))  # Prevent log(0)
+            surprisal_values = -np.log(np.clip(prob_list, a_min=5e-10, a_max=None))
+
             if 0.0 in surprisal_values:
                 print(f"Warning: Zero surprisal values found for text_seq: '{text_seq}'")
                 print(f"Probabilities: {prob_list}")
