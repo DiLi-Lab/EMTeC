@@ -86,35 +86,6 @@ class SurprisalScorer:
             raise NotImplementedError(f'Surprisal extraction for model {self.name} is not implemented.')
 
         self.model.eval()
-
-    def add_subword_metrics(self, offset, probs, sent, words):
-        prob_list = [1.0] * len(words)  # Initialize probabilities for each word as 1 (100%)
-        word_index = 0  # Start with the first word
-        accumulated_length = 0  # Track accumulated length to compare with word lengths
-        token_lengths = [end - start for start, end in offset]  # Length of each token
-
-        for token_length, p in zip(token_lengths, probs):
-            accumulated_length += token_length
-
-            if word_index < len(words):
-                prob_list[word_index] *= p
-
-            next_word_boundary = len(words[word_index]) + (word_index * 1)  # Space adjustment
-
-            if word_index + 1 < len(words) and words[word_index + 1] in string.punctuation:
-                next_word_boundary += len(words[word_index + 1]) + 1
-
-            if accumulated_length >= next_word_boundary:
-                word_index += 1
-                if word_index < len(words) and words[word_index] in string.punctuation:
-                    word_index += 1
-
-            if word_index >= len(words):
-                break
-
-        assert len(prob_list) == len(words), "Mismatch in probabilities and words count"
-
-        return prob_list
     
 
     def multiply_subword_metrics(self, offset, probs, text, words):
@@ -126,14 +97,8 @@ class SurprisalScorer:
                 # print(f'{words[i]} ~ {text[offset[j][0]:offset[j][1]]}')
                 if words[i] == text[offset[j][0]: offset[j][1]].strip().lstrip():
                     prob += [probs[j]]  # add probability of word to list
-                    #breakpoint()
-                    # print('subword = word')
-                    # print(words[i])
-                    # print(text[offset[j][0]: offset[j][1]])
-                    # print(text[offset[j][0]: offset[j][1]].strip().lstrip())
                     j += 1
-                    
-                    
+                        
                 # case 2: tokenizer split subword tokens: merge subwords and add up probabilities until the same
                 else:
 
@@ -141,22 +106,21 @@ class SurprisalScorer:
                     concat_token = text[offset[j][0]: offset[j][1]].strip().lstrip()
                     concat_prob = probs[j]
 
+                    # account for problem that the tokenizer tokenizes apostrophes (e.g., Ballet's) into two tokens, resulting in twice the same offset
                     if j > 1:
                         if offset[j] == offset[j-1]:
                             j += 1
                             continue
  
-                    #print(concat_token)
                     while concat_token != words[i]:
 
+                        # account for problem that the tokenizer tokenizes apostrophes (e.g., Ballet's) into two tokens, resulting in twice the same offset
                         if offset[j+1] == offset[j]:
                             j += 1
                             continue
                         
                         j += 1
                         
-
-                        #print(j)
                         concat_token += text[
                                         offset[j][0]: offset[j][1]
                                         ].strip()
@@ -166,18 +130,16 @@ class SurprisalScorer:
                                 not in STOP_CHARS_SURP
                         ):
                             concat_prob *= probs[j]  # multiply probabilities
-                        #print(text[offset[j][0]: offset[j][1]].strip())
-                        #print(j)
-                        #print(concat_token)
+
                     prob += [concat_prob]
                     j += 1
-                    #print(j)
+
             except IndexError:
                 #print('error')
                 if len(prob) == len(words)-1:
                     prob += [concat_prob]
                 break
-        #breakpoint()
+
         assert len(prob) == len(words), f"Length of probabilities ({len(prob)}) does not match length of words ({len(words)}) for sentence {sent}"
         return prob
 
@@ -225,16 +187,11 @@ class SurprisalScorer:
 
                 start_ind += encodings["offset_mapping"][-self.STRIDE][1]
 
-            #breakpoint()
-            #prob_list = self.add_subword_metrics(offset_mapping, all_probs.cpu().numpy(), text_seq, words)
             prob_list = self.multiply_subword_metrics(offset_mapping, all_probs.cpu(), text_seq, words)
 
-            # if not len(prob_list) == len(words):
-            #     breakpoint()
-
             assert len(prob_list) == len(words), "Mismatch in probabilities and words count"
-            #surprisal_values = -np.log2(np.clip(prob_list, a_min=5e-10, a_max=None))  # Prevent log(0)
-            surprisal_values = -np.log(np.clip(prob_list, a_min=5e-10, a_max=None))
+
+            surprisal_values = -np.log(np.clip(prob_list, a_min=5e-10, a_max=None))  # Prevent log(0)
 
             if 0.0 in surprisal_values:
                 print(f"Warning: Zero surprisal values found for text_seq: '{text_seq}'")
