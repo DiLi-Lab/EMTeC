@@ -9,6 +9,7 @@ import os
 import glob
 import pandas as pd
 from preprocessing.utils.loading import load_config
+from preprocessing.utils.extract_tracked_eye import extract_tracked_eye
 
 
 def main():
@@ -52,6 +53,17 @@ def main():
     out_path = os.path.join('data', 'participant_info')
     if not os.path.exists(out_path):
         os.makedirs(out_path)
+
+    # get the information on which eye was tracked
+    eyes_tracked = extract_tracked_eye(
+        subject_ids = all_demographics['subject_id'].unique().tolist(),
+        path_to_subjects='data/subject_level_data',
+    )
+    breakpoint()
+    eyes_tracked_series = list()
+    for idx, row in all_demographics.iterrows():
+        eyes_tracked_series.append(eyes_tracked[row['subject_id']])
+    all_demographics['eye_tracked'] = eyes_tracked_series
 
     all_questions.to_csv(os.path.join(out_path, 'participant_results.csv'), sep='\t', index=False)
     all_demographics.to_csv(os.path.join(out_path, 'participant_info.csv'), sep='\t', index=False)
