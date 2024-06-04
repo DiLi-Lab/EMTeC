@@ -372,7 +372,7 @@ In order to merge
 * the corrected fixation sequences
 * the reading measures
 * the corrected reading measures
-* the participant information (questionnaire and comprehension question information)
+* the participant information (questionnaire and comprehension question information), including extracting the information on which eye was tracked for each participant
 * the word-level lexical annotation with the reading measures
 * the word-level lexical annotation with the corrected reading measures
 
