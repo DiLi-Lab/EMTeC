@@ -241,6 +241,9 @@ def readfile_event(
     if subj_id in exclude_subjects:
         print(f'---excluding subject {subj_id}')
         return
+    
+    if not subj_id == 'ET_01':
+        return 0
 
     csv_filepath = os.path.join(subj_dir, f'{subj_id}.csv')
     event_dir = os.path.join(subj_dir, 'fixations')
@@ -273,9 +276,11 @@ def readfile_event(
     # select columns to be included:
     coords = []  # columns containing x/y coordinates for the selected eye(s)
     if eye in ['right', 'both']:
-        coords = coords + ['x_right', 'y_right', 'time']
+        #coords = coords + ['x_right', 'y_right', 'time']
+        coords = coords + ['x', 'y', 'time']
     if eye in ['left', 'both']:
-        coords = coords + ['x_left', 'y_left', 'time']
+        #coords = coords + ['x_left', 'y_left', 'time']
+        coords = coords + ['x', 'y', 'time']
 
     csv_columns = columns['reading'] + coords
 
@@ -327,14 +332,19 @@ def readfile_event(
         d['d' + deg_col] = d[deg_col] - d[deg_col].shift(1)
         vel_cols.append('d' + deg_col)
 
-    # Start preprocessing, choose selected eye
-    if eye == 'both':  # to be done: implement binocular preprocessing: see Engbert's microsaccade detection
-        print('Binocular preprocessing is not defined yet')
-        return -1
-    if eye == 'left':
-        choose_data_from_left(d)
-    else:
-        choose_data_from_right(d)
+
+    ## columns are already named in a non-specific way (x and y instead of x_right, y_right and x_left, y_left)
+    # # Start preprocessing, choose selected eye
+    # if eye == 'both':  # to be done: implement binocular preprocessing: see Engbert's microsaccade detection
+    #     print('Binocular preprocessing is not defined yet')
+    #     return -1
+    # if eye == 'left':
+    #     choose_data_from_left(d)
+    # else:
+    #     choose_data_from_right(d)
+    # rename time column
+
+    d['t'] = d['time']
 
     # split the dataframe into the individual texts
     sub_dfs = group_df(d)
