@@ -34,8 +34,10 @@ def plot_px_over_time(
     if not os.path.exists(plot_savepath):
         os.makedirs(plot_savepath)
 
-    xs = sub_df['x_right'].tolist()
-    ys = sub_df['y_right'].tolist()
+    #xs = sub_df['x_right'].tolist()
+    #ys = sub_df['y_right'].tolist()
+    xs = sub_df['x'].tolist()
+    ys = sub_df['y'].tolist()
     time = sub_df['time'].tolist()
     fix_intervals = [
         (t_start, t_end) for t_start, t_end in zip(event_dat['t_start'].tolist(), event_dat['t_end'].tolist())
