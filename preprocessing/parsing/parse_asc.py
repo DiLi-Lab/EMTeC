@@ -180,6 +180,16 @@ def parse_asc_file(
 
         file_columns = columns[experiment] + columns['sample']
         df = pd.DataFrame(data=data_out[experiment])
+
+        # rename columns x_right and y_right to x and y
+        df = df.rename(columns={'x_right': 'x', 'y_right': 'y'})
+
+        # replace column names in file columns
+        x_right_index = file_columns.index('x_right')
+        y_right_index = file_columns.index('y_right')
+        file_columns[x_right_index] = 'x'
+        file_columns[y_right_index] = 'y'
+
         df[file_columns].to_csv(filepath_csv, index=False, sep='\t', na_rep='NaN')
 
     return 0
