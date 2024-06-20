@@ -445,5 +445,5 @@ bash run_regression_models.sh
 This will save the brms-fits in the folder `model_fits`.
 To extract and plot the posterior distributions of the parameters of interest (word length, surprisal, etc.), please run 
 ```bash
-bash Rscript --vanilla analyses/extract_and_plot.R
+Rscript --vanilla analyses/extract_and_plot.R
 ```
