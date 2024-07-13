@@ -433,3 +433,19 @@ The resulting folder structure will then look like this:
     ├── stimuli_columns_descriptions.csv
     ├── stimuli.csv
 ```
+
+
+### Psycholinguistic analyses
+
+To run the psycholinguistic analyses please run the regression models for the different response variables (first-pass reading time, first-pass regression etc.) using the following command.
+
+```bash
+mkdir model_fits, logs
+bash run_regression_models.sh
+```
+
+This will save the brms-fits in the folder `model_fits`.
+To extract and plot the posterior distributions of the parameters of interest (word length, surprisal, etc.), please run 
+```bash
+Rscript --vanilla analyses/extract_and_plot.R
+```
