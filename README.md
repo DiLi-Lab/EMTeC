@@ -349,7 +349,7 @@ as I had to adjust the minimum number of words. This annotation will directly ad
 
 ### Annotation on word-level
 
-To annotate the stimuli texts on word-level with frequency scores, PoS tags, dependency tags, surprisal values, etc., please run the bash script
+To annotate the stimuli texts on word-level with frequency scores, PoS tags, dependency tags, surprisal values, etc., please first insert your **huggingface token** in the file [`annotation/annotations.py`](https://github.com/lenabolliger/EMTeC/blob/cc2fd4b2767a29c584e3e0be0025768dd25a16cc/annotation/annotations.py#L109), then run the bash script
 
 ```bash
 bash run_annotation_word.sh gpt2 gpt2-large opt-350m opt-1.3b mistral-base mistral-instruct phi2 llama2-7b llama2-13b pythia-6.9b pythia-12b
@@ -359,6 +359,8 @@ for each stimulus text (i.e., each condition; item id, model, decoding strategy)
 word length information, and frequency values are added to a temporary file `annotation/temp_annotated_data.csv`. Then 
 the surprisal values are extracted from the language models specified in the bash call and the final annotations are 
 saved in `annotations/word_level_annotations.csv`.
+
+Surprisal for the texts is extracted in two different ways: once only the text itself is given as input, and once both the text and the prompts are given as input for possible analyses with the transition scores, which are also conditioned on the prompt. The surprisal column names are of the shape `surprisal_{model-name}`, or `surprisal_p_{model-name}` if the surprisal was extracted for the text with the model receiving also the prompt.
 
 **Note:** In order to prompt the models, you need GPUs set up with [CUDA](https://developer.nvidia.com/cuda-downloads).
 
