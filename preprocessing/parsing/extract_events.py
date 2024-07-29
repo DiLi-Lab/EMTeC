@@ -241,9 +241,7 @@ def readfile_event(
     if subj_id in exclude_subjects:
         print(f'---excluding subject {subj_id}')
         return
-    
-    if not subj_id == 'ET_01':
-        return 0
+
 
     csv_filepath = os.path.join(subj_dir, f'{subj_id}.csv')
     event_dir = os.path.join(subj_dir, 'fixations')
