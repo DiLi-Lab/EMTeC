@@ -25,13 +25,14 @@ def download_data(
     base_url = 'https://osf.io/download/'
 
     urls = {
-        'fixations.csv': 'tk7ph',
-        'fixations_corrected.csv': '49qwa',
-        'reading_measures_corrected.csv': 'whn7j',
-        'stimuli_columns_descriptions.csv': 'je6uz',
-        'stimuli.csv': 'p5wf2',
-        'participant_info.zip': 'xf67b',
-        'subject_level_data.zip': 'rwqs9',
+        'fixations.csv': '2hs8p',
+        'fixations_corrected.csv': 'w3gan',
+        'reading_measures.csv': 's4ny8',
+        'reading_measures_corrected.csv': 'wa3ty',
+        'stimuli_columns_descriptions.csv': 'tpr5e',
+        'stimuli.csv': 'vgp9a',
+        'participant_info.zip': '7mw6u',
+        'subject_level_data.zip': '374sk',
     }
 
     for data, resource in (pbar := tqdm(urls.items())):
