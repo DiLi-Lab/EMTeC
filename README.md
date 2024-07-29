@@ -118,8 +118,8 @@ the result of which should look like the following:
 
 ### Conversion of `.edf` files to `.asc` files
 
-The `.edf` files returned by the experimental software is not published. We nevertheless publish the code that implements 
-this conversion. The result is an `.asc` file in each subject directory. Beware that the application that converts the `.edf` 
+The `.edf` files returned by the experimental software are not published. We nevertheless publish the code that implements 
+this conversion. The result is an `.asc` file in each subject directory. In order to convert the `.edf` into `.asc` files, we employed the `edf2asc` tool by [SR Research](https://www.sr-research.com/). Beware that this application that converts the `.edf` 
 to `.asc` files only works in Linux- or Windows-based systems.
 
 
