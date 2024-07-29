@@ -5,7 +5,7 @@ set -euxo pipefail
 
 ### Phi2
 
-CUDA_VISIBLE_DEVICES=0,1 python -m generation.generate --dec sampling --model phi2 --subset-idx 0 4
+CUDA_VISIBLE_DEVICES=0,1 python -m generation.generate --dec sampling --model phi2
 CUDA_VISIBLE_DEVICES=0,1 python -m generation.generate --dec greedy_search --model phi2
 CUDA_VISIBLE_DEVICES=0,1 python -m generation.generate --dec topk --model phi2
 CUDA_VISIBLE_DEVICES=0,1 python -m generation.generate --dec topp --model phi2
