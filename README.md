@@ -3,7 +3,7 @@
 TODO update links
 * The preprint **EMTeC: Eye movements on Machine-generated Texts Corpus** is available on TODO
 * The eye-tracking data is available via [OSF](https://osf.io/ajqze/) or can be automatically downloaded using a python script (see below).
-* The tensors are available on [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/GCU0W8&version=DRAFT)
+* The tensors are available on [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/GCU0W8)
     * Attention: beware that the tensors require a lot of story to be downloaded. The following tensors are not provided via Dataverse because they exceed the maximum file size
         * Mistral: beam search item 34, item 43; greedy search item 43
         * WizardLM: beam search item 34, item 35, item 40, item 43; greedy search item 43; sampling item 43, top-k item 43, top-p item 43
@@ -46,7 +46,7 @@ needed for reproducibility purposes.
 **TODO make Dataset public, adjust URL in Readme and python script**
 **TODO check if python script works once Dataset is public**
 
-The transition scores, attention scores, hidden states, and beam indices are stored in a [Harvard Dataverse Dataset](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/GCU0W8&version=DRAFT).
+The transition scores, attention scores, hidden states, and beam indices are stored in a [Harvard Dataverse Dataset](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/GCU0W8).
 They can be downloaded from there or via calling
 ```bash
 python get_tensors.py
