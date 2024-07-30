@@ -12,9 +12,6 @@ This repository contains all code that has been used to generate post-process an
 
 
 
-## Summary
-TODO
-
 ## Setup
 
 ### Clone this repository
@@ -357,7 +354,7 @@ as I had to adjust the minimum number of words. This annotation will directly ad
 
 ### Annotation on word-level
 
-To annotate the stimuli texts on word-level with frequency scores, PoS tags, dependency tags, surprisal values, etc., please first insert your **huggingface token** in the file [`annotation/annotations.py`](https://github.com/lenabolliger/EMTeC/blob/cc2fd4b2767a29c584e3e0be0025768dd25a16cc/annotation/annotations.py#L109), then run the bash script
+To annotate the stimuli texts on word-level with frequency scores, PoS tags, dependency tags, surprisal values, etc., please first insert your **huggingface token** in the file [`annotation/annotations.py`](https://github.com/dili-lab/EMTeC/blob/cc2fd4b2767a29c584e3e0be0025768dd25a16cc/annotation/annotations.py#L109), then run the bash script
 
 ```bash
 bash run_annotation_word.sh gpt2 gpt2-large opt-350m opt-1.3b mistral-base mistral-instruct phi2 llama2-7b llama2-13b pythia-6.9b pythia-12b
