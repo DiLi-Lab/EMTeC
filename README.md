@@ -51,6 +51,7 @@ They can be downloaded from there or via calling
 ```bash
 python get_tensors.py
 ```
+The tensors will be saved to the directory `tensor_data/tensors/`.
 ***Attention:*** The tensors amount to about **340 GB** in size.
 
 
