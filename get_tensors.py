@@ -13,7 +13,7 @@ def main():
     # Make GET request to retrieve metadata
     response = requests.get(api_url)
 
-    with open('tensors/metadata.json', 'r') as f:
+    with open('tensor_data/metadata/metadata.json', 'r') as f:
         metadata = json.load(f)
 
     if response.status_code == 200:
@@ -22,11 +22,11 @@ def main():
             file_id = file_info['dataFile']['id']
             download_url = f'https://dataverse.harvard.edu/api/access/datafile/{file_id}'
             # Download file
-            breakpoint()
             file_response = requests.get(download_url)
             # Save file to disk or process it as needed
-            with open(os.path.join('tensors', file_info['dataFile']['filename']), 'wb') as f:
+            with open(os.path.join('tensor_data', 'tensors', file_info['dataFile']['filename']), 'wb') as f:
                 f.write(file_response.content)
+            breakpoint()
 
     else:
         print('Failed to retrieve dataset metadata')
