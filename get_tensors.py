@@ -16,6 +16,10 @@ def main():
     with open('tensor_data/metadata/metadata.json', 'r') as f:
         metadata = json.load(f)
 
+    output_dir = 'tensor_data/tensors/'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
     if response.status_code == 200:
         files = metadata['datasetVersion']['files']
         for file_info in files:
@@ -24,7 +28,7 @@ def main():
             # Download file
             file_response = requests.get(download_url)
             # Save file to disk or process it as needed
-            with open(os.path.join('tensor_data', 'tensors', file_info['dataFile']['filename']), 'wb') as f:
+            with open(os.path.join(output_dir, file_info['dataFile']['filename']), 'wb') as f:
                 f.write(file_response.content)
             breakpoint()
 
