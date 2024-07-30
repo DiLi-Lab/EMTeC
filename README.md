@@ -16,7 +16,7 @@ This repository contains all code that has been used to generate post-process an
 
 ### Clone this repository
 ```bash
-git clone git@github.com:dili-lab/emtec
+git clone https://github.com/DiLi-Lab/EMTeC.git
 ```
 
 ### Install the requirements
