@@ -6,11 +6,8 @@ import os
 
 
 def main():
-    # Define DOI of the dataset
-    doi = 'https://doi.org/10.7910/DVN/GCU0W8'
 
     # Dataverse API endpoint
-    #api_url = f'https://dataverse.harvard.edu/api/datasets/:persistentId/?persistentId=doi:{doi}'
     api_url = 'https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/GCU0W8'
 
     # Make GET request to retrieve metadata
