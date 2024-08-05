@@ -30,6 +30,11 @@ def get_args() -> ArgumentParser:
         help='download only the specified tensors. If not provided, all tensors will be downloaded.',
         nargs='+',
     )
+    parser.add_argument(
+        '--output-dir',
+        type=str,
+        help='the directory into which to save the tensors.',
+    )
     return parser.parse_args()
 
 
@@ -48,6 +53,7 @@ def main():
     models = args.model
     decs = args.dec
     tensors = args.tensor
+    out_dir = args.output_dir
 
     # Dataverse API endpoint
     api_url = 'https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/GCU0W8'
@@ -58,7 +64,11 @@ def main():
     with open('tensor_data/metadata/metadata.json', 'r') as f:
         metadata = json.load(f)
 
-    output_dir = 'tensor_data/tensors/'
+    if not out_dir:
+        output_dir = 'tensor_data/tensors/'
+    else:
+        output_dir = output_dir
+        
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 

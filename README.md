@@ -47,7 +47,10 @@ They can be downloaded from there or via calling
 ```bash
 python get_tensors.py
 ```
-The tensors will be saved to the directory `tensor_data/tensors/`.
+The tensors will be saved to the directory `tensor_data/tensors/`. For a different directory, specify it as argument:
+```bash
+python get_tensors.py --output-dir [DIRNAME]
+```
 
 If one does not want to download all tensors, one can subset for the model, the tensor type, and the decoding strategy with the following command line arguments:
 * `--model`
