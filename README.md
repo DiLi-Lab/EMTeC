@@ -67,6 +67,12 @@ If one does not want to download all tensors, one can subset for the model, the 
     * `sequences`
     * `scores` (the transition scores)
 
+
+*Example*: 
+```bash
+python get_tensors.py --model mistral --dec sampling topk --tensor hidden_states scores
+```
+
 ***Attention:*** The tensors amount to about **340 GB** in size.
 * *Note*: The following tensors are not provided via Dataverse because they exceed the maximum file size
     * Mistral: beam search item 34, item 43; greedy search item 43
