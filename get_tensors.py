@@ -67,8 +67,8 @@ def main():
     if not out_dir:
         output_dir = 'tensor_data/tensors/'
     else:
-        output_dir = output_dir
-        
+        output_dir = out_dir
+
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
