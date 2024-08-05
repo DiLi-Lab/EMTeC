@@ -14,6 +14,10 @@ This repository contains all code that has been used to generate post-process an
 
 ## Setup
 
+### Python version
+
+Use Python version 3.10 or higher
+
 ### Clone this repository
 ```bash
 git clone https://github.com/DiLi-Lab/EMTeC.git
