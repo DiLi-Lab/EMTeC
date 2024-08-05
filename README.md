@@ -17,6 +17,7 @@ This repository contains all code that has been used to generate post-process an
 ### Clone this repository
 ```bash
 git clone https://github.com/DiLi-Lab/EMTeC.git
+cd EMTeC
 ```
 
 ### Install the requirements
@@ -40,8 +41,6 @@ needed for reproducibility purposes.
 
 ### Tensors
 
-**TODO make Dataset public, adjust URL in Readme and python script**
-**TODO check if python script works once Dataset is public**
 
 The transition scores, attention scores, hidden states, and beam indices are stored in a [Harvard Dataverse Dataset](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/GCU0W8).
 They can be downloaded from there or via calling
@@ -50,10 +49,29 @@ python get_tensors.py
 ```
 The tensors will be saved to the directory `tensor_data/tensors/`.
 
+If one does not want to download all tensors, one can subset for the model, the tensor type, and the decoding strategy with the following command line arguments:
+* `--model`
+    * `phi2`
+    * `mistral`
+    * `wizardlm`
+* `--dec`
+    * `beam_search` 
+    * `greedy_search`
+    * `sampling`
+    * `topk`
+    * `topp`
+* `--tensor`
+    * `attentions`
+    * `beam_indices`
+    * `hidden_states`
+    * `sequences`
+    * `scores` (the transition scores)
+
 ***Attention:*** The tensors amount to about **340 GB** in size.
-* *Note*: beware that the tensors require a lot of storage to be downloaded. The following tensors are not provided via Dataverse because they exceed the maximum file size
+* *Note*: The following tensors are not provided via Dataverse because they exceed the maximum file size
     * Mistral: beam search item 34, item 43; greedy search item 43
     * WizardLM: beam search item 34, item 35, item 40, item 43; greedy search item 43; sampling item 43, top-k item 43, top-p item 43
+* *Note*: Phi-2 does not return attention scores or hidden states. 
 
 
 
