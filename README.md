@@ -34,8 +34,6 @@ pip install -r requirements.txt
 
 ### Eye-tracking data
 
-**TODO make OSF repo public, adjust URLs**
-
 The eye-tracking data is stored in an [OSF Repository](https://osf.io/ajqze/). To download and extract it directly. please run
 ```bash
 python get_et_data.py --extract
@@ -90,6 +88,9 @@ python get_tensors.py --model mistral --dec sampling topk --tensor hidden_states
 
 ## Prompting of LLMs and text generation
 
+During the generation, the transition scores, beam indices, generated sequences, hidden states, and attention scores will be saved to disk. Please adapt the path names in `generation/generation_constants.py`.
+
+
 In order to prompt Phi-2, Mistral and WizardLM, you can run the bash script
 
 
@@ -108,10 +109,7 @@ The text generation scripts not only prompt the models but they also post-proces
 stimuli presented in the eye-tracking experiment should follow certain criteria and formats, the model outputs are 
 also truncated (in order to remove unfinished sentences and trailing whitespace characters) and cleaned.
 
-During generation, the transition scores, beam indices, generated sequences, hidden states, and attention scores are 
-saved to disk. Change the path name to the directory in which to save them accordingly in
-`generation/generation_constants.py`.
-Also adapt the path to the transformers cache in `generation/generation_constants.py`.
+
 
 ## Selecting and merging stimuli
 
