@@ -87,7 +87,7 @@ def compute_reading_measures(
             'SL_out': 0,    # outgoing saccade length
             'TFC': 0,       # total fixation count
         }
-        # TODO maybe having word index within the word_row already doesn't make sense?
+        
         word_dict[int(word_index)] = word_row
 
         right_most_word, cur_fix_word_idx, next_fix_word_idx, next_fix_dur = -1, -1, -1, -1

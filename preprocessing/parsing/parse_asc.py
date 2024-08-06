@@ -169,7 +169,6 @@ def parse_asc_file(
                 data_out[curr_exp]['decoding_strategy'].append(decoding_strategy)
 
         else:
-            # TODO: Check what types of lines we are discarding here
             pass
 
     asc_file.close()
