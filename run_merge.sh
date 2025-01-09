@@ -18,4 +18,3 @@ python -m preprocessing.utils.merge_rm_files --corrected
 python -m preprocessing.utils.merge_annotations
 # remove the word-level annotation file
 rm annotation/word_level_annotations.csv
-

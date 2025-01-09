@@ -5,6 +5,7 @@ This repository contains EMTeC, the **E**ye Movements on **M**achine-Generated *
 This repository contains all code that has been used to generate post-process and annotate the stimuli; the code used for the eye-tracking-data pre-processing pipeline; and the code for the psycholinguistic analysis.
 
 
+
 * The preprint **EMTeC: Eye Movements on Machine-Generated Texts Corpus** is available on [arXiv](https://arxiv.org/abs/2408.04289)
 * The eye-tracking data is available via [OSF](https://osf.io/ajqze/) or can be automatically downloaded using a python script (see below).
 * The tensors are available on [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/GCU0W8) or can be automatically downloaded using a python script (see below)
