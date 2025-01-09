@@ -46,7 +46,7 @@ def compute_reading_measures(
     fixations_df = fixations_df.sort_values(by=['index'])
 
     # append one extra dummy fixation to have the next fixation for the actual last fixation
-    pd.concat(
+    fixations_df = pd.concat(
         [
             fixations_df,
             pd.DataFrame(

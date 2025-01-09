@@ -4,8 +4,6 @@ This repository contains EMTeC, the **E**ye Movements on **M**achine-Generated *
 
 This repository contains all code that has been used to generate post-process and annotate the stimuli; the code used for the eye-tracking-data pre-processing pipeline; and the code for the psycholinguistic analysis.
 
-
-
 * The preprint **EMTeC: Eye Movements on Machine-Generated Texts Corpus** is available on [arXiv](https://arxiv.org/abs/2408.04289)
 * The eye-tracking data is available via [OSF](https://osf.io/ajqze/) or can be automatically downloaded using a python script (see below).
 * The tensors are available on [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/GCU0W8) or can be automatically downloaded using a python script (see below)
@@ -215,7 +213,7 @@ The following arguments can be passed:
 * `--plot-px-time`: if given, the raw x- and y-coordinates are plotted over time and the fixations extracted with the algorithm are marked.
 * `--plot-ampl-vel`: if given, the peak saccade velocities are plotted over saccade amplitudes.
 * `--threshold`: the threshold to use in the microsaccade detection algorithm. The default is `trial_based`, i.e. the threshold is estimated for each experimental stimulus individually.
-* `--threshold-factor`: the factor with which the treshold is multiplied to obtain the radius
+* `--threshold-factor`: the factor with which the threshold is multiplied to obtain the radius
 * `--threshold-method`: the method to compute the threshold
 * `--min-fixation-duration-ms`: the minimum fixation duration in ms
 * `--min-saccade-duration-ms`: the minimum saccade duration in ms
