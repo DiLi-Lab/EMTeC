@@ -163,7 +163,7 @@ for (pred in PREDICTORS) {
         theme(axis.text.x = element_text(angle = 20, hjust = 1)) +
         theme(text = element_text(family = "sans")) +
         geom_hline(yintercept = 0, linetype = "dashed") +
-        labs(shape = "Significance", colour = "Predictor") +
+        labs(shape = "Significance", colour = "Resp. Var.") +
         scale_shape_manual(values = c(1, 19)) +
         #xlab("Effect of decoding strategy (sum-contrast coded)") +
         xlab(paste("Effect of", pred_name, "(sum-contrast coded)")) +
