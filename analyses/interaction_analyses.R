@@ -98,7 +98,6 @@ for (rm in RMS) {
 
         formula <- paste(rm, "~ 1 + (1|subject_id) + word_length_with_punct + zipf_freq + surprisal_gpt2 + ", predictor, " + surprisal_gpt2:", predictor, sep = "")
         reg_model <- lmer(formula, data = rms_df_log)
-        print(summary(reg_model))
         effects <- data.frame(summary(reg_model)$coefficients[-1, c("Estimate", "Pr(>|t|)", "Std. Error")])
         colnames(effects)[2] <- "pval"
         effects$effect <- rownames(effects)
