@@ -95,22 +95,23 @@ df_final$predictor <- droplevels(df_final$predictor)
 
 ggplot(data = df_final, aes(x = predictor, y = m, colour = predictor)) +
   geom_point(
-    position = position_dodge(width = .5), size = 1
+    position = position_dodge(width = .5), size = 1.3
   ) +
   geom_errorbar(aes(ymin = lower, ymax = upper),
-    width = .1, position = position_dodge(width = .5), linewidth = 0.4
+    width = .05, position = position_dodge(width = .5), linewidth = 0.6
   ) +
-  #  scale_y_continuous(labels = function(x) format(x, scientific = TRUE)) +
-  facet_wrap(~reading_measure, scales = "free_y", ncol = 4) +
+  facet_wrap(~reading_measure, scales = "free_y", ncol = 2) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   ylab("Effect size") +
   xlab("Predictor") +
-  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  # theme(axis.text.x = element_text(angle = 20, hjust = 1)) +
   #  scale_colour_viridis(discrete = TRUE, option = "H") +
-  scale_colour_manual(values = wes_palette("Zissou1")[c(1, 3, 5)]) +
+  scale_colour_manual(values = wes_palette("Zissou1")[c(1, 4, 5)]) +
   #  increase font size
-  theme(text = element_text(family = "sans"), axis.text.x = element_text(size = 11), axis.text.y = element_text(size = 11), axis.title = element_text(size = 13)) +
+  theme(text = element_text(family = "sans"), axis.text.x = element_text(size = 15), axis.text.y = element_text(size = 15), axis.title = element_text(size = 15),
+  strip.text = element_text(size = 15)) +
+  # increase font size of strip of facets
   theme(legend.position = "bottom") + #  remove legend for color
   guides(color = "none")
 
-ggsave("effect_sizes.pdf", width = 16, height = 5, dpi = 150)
+ggsave("effect_sizes.pdf", width = 14, height = 9, dpi = 150)
