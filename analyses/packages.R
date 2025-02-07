@@ -16,7 +16,21 @@ required_packages <- c(
   "lmerTest",
   "patchwork",
   "cowplot",
-  "yaml"
+  "yaml",
+  "brms",
+  "readr",
+  "stringr",
+  "grid",
+  "gridExtra",
+  "distributional",
+  "ggdist",
+  "wesanderson",
+  "RColorBrewer",
+  "colorspace",
+  "lme4",
+  "MASS",
+  "rstan",
+  "testit"
 )
 
 # Install any missing packages
