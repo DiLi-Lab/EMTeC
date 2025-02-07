@@ -1,25 +1,8 @@
 #!/usr/bin/env Rscript
-library(boot)
-library(readr)
-library(tidyr)
-library(dplyr)
-library(stringr)
-library(grid)
-library(gridExtra)
-library(ggplot2)
-library(distributional)
-library(ggdist)
-library(cowplot)
-library(patchwork)
-library(wesanderson)
-library(RColorBrewer)
-library(colorspace)
-library(lme4)
-library(MASS)
-library(brms)
-library(rstan)
-library(testit) # for assert
-library(viridis)
+
+source("analyses/packages.R")
+# clear all vars
+rm(list = ls())
 
 myspread <- function(df, key, value) {
   # quote key
@@ -39,7 +22,7 @@ reading_measures <- c("Fix", "FPReg", "FPRT", "TFT")
 
 df_all <- data.frame()
 for (reading_measure in reading_measures) {
-  model_fit <- readRDS(paste0("./model_fits/decoding_", reading_measure, ".rds"))
+  model_fit <- readRDS(paste0("./analyses/model_fits/decoding_", reading_measure, ".rds"))
   for (predictor in predictors) {
     summary <- summary(model_fit)
     summary <- summary$fixed
@@ -93,25 +76,31 @@ df_final <- df_final[df_final$predictor != "Last in line", ]
 #  drop unused levels
 df_final$predictor <- droplevels(df_final$predictor)
 
-ggplot(data = df_final, aes(x = predictor, y = m, colour = predictor)) +
+# new variable variable type: binary (Fix or Fpreg)  vs continuous (FPRT or TFT)
+df_final$variable_type <- ifelse(df_final$reading_measure %in% c("Fixated", "First-pass regression"), "Binary", "Continuous")
+
+ggplot(data = df_final, aes(x = predictor, y = m, fill = reading_measure, colour = reading_measure)) +
   geom_point(
     position = position_dodge(width = .5), size = 1.3
   ) +
   geom_errorbar(aes(ymin = lower, ymax = upper),
     width = .05, position = position_dodge(width = .5), linewidth = 0.6
   ) +
-  facet_wrap(~reading_measure, scales = "free_y", ncol = 2) +
+  facet_wrap(~variable_type, scales = "free", nrow=1) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   ylab("Effect size") +
   xlab("Predictor") +
   # theme(axis.text.x = element_text(angle = 20, hjust = 1)) +
   #  scale_colour_viridis(discrete = TRUE, option = "H") +
-  scale_colour_manual(values = wes_palette("Zissou1")[c(1, 4, 5)]) +
-  #  increase font size
+  scale_colour_manual(values = wes_palette("Zissou1")[c(1, 2, 4, 5)]) +
+  #  increase font size (also of color / fill legned)
+  theme_light() +
   theme(text = element_text(family = "sans"), axis.text.x = element_text(size = 15), axis.text.y = element_text(size = 15), axis.title = element_text(size = 15),
-  strip.text = element_text(size = 15)) +
+  strip.text = element_text(size = 15), legend.text = element_text(size = 15), legend.title = element_text(size = 15)) +
   # increase font size of strip of facets
-  theme(legend.position = "bottom") + #  remove legend for color
-  guides(color = "none")
+  # color / fill legend at bottom
+  theme(legend.position = "bottom") +
+  # title for color and fill
+  labs(fill = "Reading measure", color = "Reading measure")
 
-ggsave("effect_sizes.pdf", width = 14, height = 9, dpi = 150)
+ggsave("effect_sizes.pdf", width = 12, height = 7, dpi = 150)
