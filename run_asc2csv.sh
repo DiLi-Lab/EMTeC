@@ -1,3 +1,4 @@
+# test comment
 #!/bin/sh
 set -euxo pipefail
 
