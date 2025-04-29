@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "EMTeC: A corpus of eye movements on machine-generated texts"
+authors:
+  - family-names: Bolliger
+    given-names: Lena S.
+  - family-names: Haller
+    given-names: Patrick
+  - family-names: Cretton
+    given-names: Isabelle C. R.
+  - family-names: Reich
+    given-names: David R.
+  - family-names: Kew
+    given-names: Tannon
+  - family-names: Jäger
+    given-names: Lena A.
+date-released: 2025-01-01
+journal: "Behavior Research Methods"
+note: "In press."
+repository-code: "https://github.com/DiLi-Lab/EMTeC/"
