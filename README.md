@@ -395,6 +395,8 @@ saved in `annotations/word_level_annotations.csv`.
 
 Surprisal for the texts is extracted in two different ways: once only the text itself is given as input, and once both the text and the prompts are given as input for possible analyses with the transition scores, which are also conditioned on the prompt. The surprisal column names are of the shape `surprisal_{model-name}`, or `surprisal_p_{model-name}` if the surprisal was extracted for the text with the model receiving also the prompt.
 
+All **surprisal** metrics are computed using the **natural logarithm** (logarithm to the base $e$) and are thus expressed in nats. 
+
 **Note:** In order to prompt the models, you need GPUs set up with [CUDA](https://developer.nvidia.com/cuda-downloads).
 
 
